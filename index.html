@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0D0F0E">
+<title>Treino – Allan</title>
+<style>
+  :root {
+    --bg: #0D0F0E;
+    --surface: #161918;
+    --card: #1E2220;
+    --border: #2A2F2B;
+    --green: #7EC820;
+    --green-dim: #3B6D11;
+    --green-bg: #1A2B10;
+    --green-text: #A8E040;
+    --amber: #F0A500;
+    --amber-bg: #2B1E00;
+    --amber-text: #F5C842;
+    --blue: #3B9EE0;
+    --blue-bg: #0D1E30;
+    --blue-text: #7DC8F5;
+    --red: #E05050;
+    --red-bg: #2B1010;
+    --red-text: #F08080;
+    --text: #E8EDE9;
+    --text2: #8A9B8C;
+    --text3: #4A5A4C;
+    --teal: #20C8A0;
+    --teal-bg: #0A2520;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; min-height: 100vh; }
+
+  /* TOP BAR */
+  .topbar { position: sticky; top: 0; z-index: 100; background: var(--bg); border-bottom: 1px solid var(--border); padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
+  .topbar-title { font-size: 16px; font-weight: 600; color: var(--text); flex: 1; }
+  .topbar-sub { font-size: 11px; color: var(--text2); }
+  .days-chip { background: var(--green-bg); color: var(--green-text); font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+
+  /* NAV TABS */
+  .tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--bg); position: sticky; top: 57px; z-index: 99; }
+  .tab { flex: 1; padding: 12px 4px; text-align: center; font-size: 12px; font-weight: 500; color: var(--text2); cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s; }
+  .tab.active { color: var(--green-text); border-bottom-color: var(--green); }
+
+  /* VIEWS */
+  .view { display: none; padding: 16px; }
+  .view.active { display: block; }
+
+  /* STAT CARDS */
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+  .stat-label { font-size: 11px; color: var(--text2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .05em; }
+  .stat-value { font-size: 26px; font-weight: 600; color: var(--text); line-height: 1; }
+  .stat-sub { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+  /* PROGRESS BAR */
+  .prog-wrap { background: var(--card); border-radius: 12px; padding: 14px; margin-bottom: 16px; border: 1px solid var(--border); }
+  .prog-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--text2); margin-bottom: 8px; }
+  .prog-bar { height: 6px; background: var(--border); border-radius: 999px; overflow: hidden; }
+  .prog-fill { height: 100%; border-radius: 999px; background: var(--green); transition: width .5s ease; }
+
+  /* WEEK SELECTOR */
+  .week-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 8px; margin-bottom: 16px; }
+  .week-scroll::-webkit-scrollbar { display: none; }
+  .week-row { display: flex; gap: 8px; width: max-content; }
+  .week-pill { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--card); font-size: 12px; font-weight: 500; color: var(--text2); cursor: pointer; white-space: nowrap; transition: all .15s; }
+  .week-pill.done { background: var(--green-bg); border-color: var(--green-dim); color: var(--green-text); }
+  .week-pill.active { background: var(--blue-bg); border-color: var(--blue); color: var(--blue-text); }
+  .week-pill.recovery { background: var(--amber-bg); border-color: var(--amber); color: var(--amber-text); }
+
+  /* WEEK HEADER */
+  .week-hdr { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .week-hdr-nav { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; cursor: pointer; color: var(--text2); font-size: 16px; }
+  .week-hdr-info { flex: 1; }
+  .week-hdr-title { font-size: 15px; font-weight: 600; color: var(--text); }
+  .week-hdr-date { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .phase-badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 999px; margin-top: 4px; }
+  .ph1 { background: var(--green-bg); color: var(--green-text); }
+  .ph2 { background: var(--amber-bg); color: var(--amber-text); }
+  .ph3 { background: var(--red-bg); color: var(--red-text); }
+  .ph4 { background: #1A1030; color: #C0A0FF; }
+  .ph5 { background: var(--teal-bg); color: var(--teal); }
+
+  /* SESSION CARDS */
+  .session { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+  .session.logged { border-color: var(--green-dim); }
+  .session-top { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .stype-badge { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 999px; letter-spacing: .03em; }
+  .t-easy  { background: var(--green-bg); color: var(--green-text); }
+  .t-tempo { background: var(--amber-bg); color: var(--amber-text); }
+  .t-long  { background: var(--blue-bg);  color: var(--blue-text); }
+  .session-name { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+  .session-target { font-size: 11px; color: var(--text2); }
+  .check-icon { color: var(--green); font-size: 18px; }
+
+  /* LOG SUMMARY */
+  .log-summary { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--text2); margin-bottom: 10px; }
+  .log-chip { background: var(--surface); border-radius: 6px; padding: 4px 8px; }
+  .log-note { font-size: 11px; color: var(--text3); font-style: italic; margin-top: 6px; }
+  .pace-diff { font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 999px; margin-left: 4px; }
+  .faster { background: var(--green-bg); color: var(--green-text); }
+  .slower { background: var(--red-bg); color: var(--red-text); }
+  .onpar  { background: var(--blue-bg); color: var(--blue-text); }
+  .edit-btn { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 5px 10px; color: var(--text2); font-size: 12px; cursor: pointer; margin-top: 8px; }
+
+  /* FORM */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: .04em; }
+  .field input { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: var(--text); font-size: 14px; width: 100%; }
+  .field input:focus { outline: none; border-color: var(--green-dim); }
+  .field input::placeholder { color: var(--text3); }
+  .feel-grid { display: flex; gap: 6px; flex-wrap: wrap; }
+  .feel-opt { padding: 7px 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--card); color: var(--text2); font-size: 12px; cursor: pointer; transition: all .15s; }
+  .feel-opt.sel { background: var(--blue-bg); border-color: var(--blue); color: var(--blue-text); font-weight: 600; }
+  textarea.notes { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: var(--text); font-size: 13px; resize: none; min-height: 60px; margin-top: 10px; }
+  textarea.notes:focus { outline: none; border-color: var(--green-dim); }
+  .save-btn { width: 100%; margin-top: 12px; padding: 14px; background: var(--green); color: #0D0F0E; font-size: 15px; font-weight: 700; border: none; border-radius: 12px; cursor: pointer; letter-spacing: .02em; }
+  .save-btn:active { opacity: .85; transform: scale(.98); }
+
+  /* CHARTS VIEW */
+  .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 16px; }
+  .chart-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 12px; }
+  canvas { max-width: 100%; }
+
+  /* HISTORY VIEW */
+  .hist-entry { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
+  .hist-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .hist-week { font-size: 11px; color: var(--text3); }
+  .hist-name { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; }
+  .hist-detail { font-size: 12px; color: var(--text2); }
+  .hist-note { font-size: 11px; color: var(--text3); margin-top: 4px; font-style: italic; }
+  .empty { text-align: center; padding: 40px 16px; color: var(--text3); font-size: 13px; }
+
+  /* PACE GUIDE */
+  .pace-guide { background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; margin-bottom: 16px; }
+  .pace-row { display: flex; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--border); gap: 12px; }
+  .pace-row:last-child { border-bottom: none; }
+  .pace-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .pace-info { flex: 1; }
+  .pace-type { font-size: 12px; font-weight: 600; color: var(--text); }
+  .pace-desc { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .pace-val { font-size: 16px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+  .pace-unit { font-size: 10px; color: var(--text2); }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #F4F6F4; --surface: #FFFFFF; --card: #FFFFFF; --border: #E0E5E0;
+      --text: #1A1F1A; --text2: #5A6B5C; --text3: #9AAA9C;
+      --green: #3B7D11; --green-dim: #3B6D11; --green-bg: #EAF3DE; --green-text: #2A5A0A;
+      --amber: #C07800; --amber-bg: #FFF3DC; --amber-text: #7A4800;
+      --blue: #1860A5; --blue-bg: #E3F0FB; --blue-text: #0D4070;
+      --red: #B03030; --red-bg: #FBEAEA; --red-text: #7A1515;
+      --teal: #0A6E56; --teal-bg: #E0F3EE;
+    }
+    .save-btn { color: #FFFFFF; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="topbar-title">Treino — Allan</div>
+    <div class="topbar-sub">Meia Maratona · 15 nov 2026</div>
+  </div>
+  <div class="days-chip" id="days-chip">… dias</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showView('hoje')">Hoje</div>
+  <div class="tab" onclick="showView('progresso')">Progresso</div>
+  <div class="tab" onclick="showView('historico')">Histórico</div>
+  <div class="tab" onclick="showView('guia')">Guia</div>
+</div>
+
+<!-- VIEW: HOJE -->
+<div id="view-hoje" class="view active">
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-label">Semana atual</div><div class="stat-value" id="s-week">–</div><div class="stat-sub">de 29 semanas</div></div>
+    <div class="stat-card"><div class="stat-label">Sessões feitas</div><div class="stat-value" id="s-done">–</div><div class="stat-sub" id="s-done-sub">de 87</div></div>
+    <div class="stat-card"><div class="stat-label">km rodados</div><div class="stat-value" id="s-km">–</div><div class="stat-sub">acumulados</div></div>
+    <div class="stat-card"><div class="stat-label">Semana leve?</div><div class="stat-value" id="s-rec">–</div><div class="stat-sub">recuperação</div></div>
+  </div>
+
+  <div class="prog-wrap">
+    <div class="prog-label"><span>Progresso do plano</span><span id="prog-pct">0%</span></div>
+    <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+  </div>
+
+  <div class="week-scroll"><div class="week-row" id="week-row"></div></div>
+
+  <div class="week-hdr">
+    <button class="week-hdr-nav" onclick="changeWeek(-1)">‹</button>
+    <div class="week-hdr-info">
+      <div class="week-hdr-title" id="wh-title">Semana –</div>
+      <div class="week-hdr-date" id="wh-date">–</div>
+      <div id="wh-phase"></div>
+    </div>
+    <button class="week-hdr-nav" onclick="changeWeek(1)">›</button>
+  </div>
+
+  <div id="sessions-list"></div>
+</div>
+
+<!-- VIEW: PROGRESSO -->
+<div id="view-progresso" class="view">
+  <div class="chart-card">
+    <div class="chart-title">Volume semanal — km executados vs planejados</div>
+    <canvas id="chart-vol" height="200"></canvas>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Pace real vs alvo por sessão</div>
+    <canvas id="chart-pace" height="200"></canvas>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Como me senti — distribuição</div>
+    <canvas id="chart-feel" height="200"></canvas>
+  </div>
+</div>
+
+<!-- VIEW: HISTÓRICO -->
+<div id="view-historico" class="view">
+  <div id="hist-list"></div>
+</div>
+
+<!-- VIEW: GUIA -->
+<div id="view-guia" class="view">
+  <div style="font-size:13px;color:var(--text2);margin-bottom:14px;">Ritmos de referência do plano sub-7.</div>
+  <div class="pace-guide">
+    <div class="pace-row">
+      <div class="pace-dot" style="background:var(--green)"></div>
+      <div class="pace-info"><div class="pace-type">Corrida fácil</div><div class="pace-desc">Conversa tranquila. 70–80% dos treinos.</div></div>
+      <div><div class="pace-val">7:45</div><div class="pace-unit">min/km</div></div>
+    </div>
+    <div class="pace-row">
+      <div class="pace-dot" style="background:var(--amber)"></div>
+      <div class="pace-info"><div class="pace-type">Tempo run — bloco central</div><div class="pace-desc">1 km aquec. + esforço + 1 km desaq.</div></div>
+      <div><div class="pace-val">6:15</div><div class="pace-unit">min/km</div></div>
+    </div>
+    <div class="pace-row">
+      <div class="pace-dot" style="background:var(--blue)"></div>
+      <div class="pace-info"><div class="pace-type">Longão</div><div class="pace-desc">Devagar. Foco em duração, não velocidade.</div></div>
+      <div><div class="pace-val">8:15</div><div class="pace-unit">min/km</div></div>
+    </div>
+    <div class="pace-row">
+      <div class="pace-dot" style="background:var(--teal)"></div>
+      <div class="pace-info"><div class="pace-type">Ritmo de prova</div><div class="pace-desc">Meta sub-7 → ~2h27 na linha de chegada.</div></div>
+      <div><div class="pace-val">6:55</div><div class="pace-unit">min/km</div></div>
+    </div>
+  </div>
+
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:16px;">
+    <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;">Estrutura do tempo run</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.7;">
+      Para um tempo run de <strong style="color:var(--text)">7 km</strong>:<br>
+      · Km 1 → aquecimento a 7:45<br>
+      · Km 2–6 → bloco a 6:15<br>
+      · Km 7 → desaquecimento a 7:45<br><br>
+      O número no plano é o total da sessão, não só o bloco de esforço.
+    </div>
+  </div>
+
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;">
+    <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;">Princípios do plano</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.8;">
+      · Progressão máxima de 10% por semana<br>
+      · A cada 3 semanas de carga → 1 semana leve<br>
+      · Sessão perdida? Não compensa na semana seguinte<br>
+      · Longão ruim? Verifique fadiga acumulada<br>
+      · Intestino: tome cafeína ao acordar, espere 20–30 min
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const PLAN = [
+  {w:1,  phase:1,label:'26 abr–2 mai', sessions:[{t:'easy',n:'Corrida fácil',km:5,p:'7:45'},{t:'easy',n:'Corrida fácil',km:5,p:'7:45'},{t:'long',n:'Longão',km:8,p:'8:15'}],  total:18},
+  {w:2,  phase:1,label:'3–9 mai',       sessions:[{t:'easy',n:'Corrida fácil',km:5,p:'7:45'},{t:'tempo',n:'Tempo run',km:5,p:'6:15'},{t:'long',n:'Longão',km:9,p:'8:15'}],   total:19},
+  {w:3,  phase:1,label:'10–16 mai',     sessions:[{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'tempo',n:'Tempo run',km:5,p:'6:15'},{t:'long',n:'Longão',km:10,p:'8:15'}],  total:21},
+  {w:4,  phase:1,label:'17–23 mai',     sessions:[{t:'easy',n:'Corrida fácil',km:4,p:'7:45'},{t:'easy',n:'Corrida fácil',km:4,p:'7:45'},{t:'long',n:'Longão',km:7,p:'8:15'}], total:15,rec:true},
+  {w:5,  phase:1,label:'24–31 mai',     sessions:[{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'tempo',n:'Tempo run',km:6,p:'6:15'},{t:'long',n:'Longão',km:11,p:'8:15'}],  total:23},
+  {w:6,  phase:2,label:'1–7 jun',       sessions:[{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'tempo',n:'Tempo run',km:7,p:'6:15'},{t:'long',n:'Longão',km:12,p:'8:15'}],  total:25},
+  {w:7,  phase:2,label:'8–14 jun',      sessions:[{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'tempo',n:'Tempo run',km:7,p:'6:15'},{t:'long',n:'Longão',km:13,p:'8:15'}],  total:26},
+  {w:8,  phase:2,label:'15–21 jun',     sessions:[{t:'easy',n:'Corrida fácil',km:5,p:'7:45'},{t:'easy',n:'Corrida fácil',km:5,p:'7:45'},{t:'long',n:'Longão',km:10,p:'8:15'}], total:20,rec:true},
+  {w:9,  phase:2,label:'22–28 jun',     sessions:[{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'tempo',n:'Tempo run',km:7,p:'6:15'},{t:'long',n:'Longão',km:14,p:'8:15'}],  total:27},
+  {w:10, phase:2,label:'29 jun–5 jul',  sessions:[{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'tempo',n:'Tempo run',km:7,p:'6:15'},{t:'long',n:'Longão',km:15,p:'8:15'}],  total:28},
+  {w:11, phase:2,label:'6–13 jul',      sessions:[{t:'easy',n:'Corrida fácil',km:5,p:'7:45'},{t:'tempo',n:'Tempo run',km:6,p:'6:15'},{t:'long',n:'Longão',km:16,p:'8:15'}],  total:27},
+  {w:12, phase:3,label:'14–20 jul',     sessions:[{t:'easy',n:'Corrida fácil',km:7,p:'7:45'},{t:'tempo',n:'Tempo run',km:8,p:'6:15'},{t:'long',n:'Longão',km:17,p:'8:15'}],  total:32},
+  {w:13, phase:3,label:'21–27 jul',     sessions:[{t:'easy',n:'Corrida fácil',km:5,p:'7:45'},{t:'easy',n:'Corrida fácil',km:5,p:'7:45'},{t:'long',n:'Longão',km:12,p:'8:15'}], total:22,rec:true},
+  {w:14, phase:3,label:'28 jul–3 ago',  sessions:[{t:'easy',n:'Corrida fácil',km:7,p:'7:45'},{t:'tempo',n:'Tempo run',km:9,p:'6:15'},{t:'long',n:'Longão',km:18,p:'8:15'}],  total:34},
+  {w:15, phase:3,label:'4–10 ago',      sessions:[{t:'easy',n:'Corrida fácil',km:7,p:'7:45'},{t:'tempo',n:'Tempo run',km:8,p:'6:15'},{t:'long',n:'Longão',km:19,p:'8:15'}],  total:34},
+  {w:16, phase:4,label:'11–17 ago',     sessions:[{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'long',n:'Longão',km:13,p:'8:15'}], total:25,rec:true},
+  {w:17, phase:4,label:'18–24 ago',     sessions:[{t:'easy',n:'Corrida fácil',km:7,p:'7:45'},{t:'tempo',n:'Tempo run',km:9,p:'6:15'},{t:'long',n:'Longão',km:16,p:'8:15'}],  total:32},
+  {w:18, phase:4,label:'25–31 ago',     sessions:[{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'tempo',n:'Tempo run',km:8,p:'6:15'},{t:'long',n:'Longão',km:18,p:'8:15'}],  total:32},
+  {w:19, phase:4,label:'1–7 set',       sessions:[{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'long',n:'Longão',km:12,p:'8:15'}], total:24,rec:true},
+  {w:20, phase:4,label:'8–14 set',      sessions:[{t:'easy',n:'Corrida fácil',km:7,p:'7:45'},{t:'tempo',n:'Tempo run',km:9,p:'6:15'},{t:'long',n:'Longão',km:17,p:'8:15'}],  total:33},
+  {w:21, phase:4,label:'15–21 set',     sessions:[{t:'easy',n:'Corrida fácil',km:7,p:'7:45'},{t:'tempo',n:'Tempo run',km:9,p:'6:15'},{t:'long',n:'Longão',km:18,p:'8:15'}],  total:34},
+  {w:22, phase:4,label:'22–28 set',     sessions:[{t:'easy',n:'Corrida fácil',km:5,p:'7:45'},{t:'tempo',n:'Tempo run',km:6,p:'6:15'},{t:'long',n:'Longão',km:13,p:'8:15'}],  total:24,rec:true},
+  {w:23, phase:4,label:'29 set–5 out',  sessions:[{t:'easy',n:'Corrida fácil',km:7,p:'7:45'},{t:'tempo',n:'Tempo run',km:7,p:'6:15'},{t:'long',n:'Longão',km:15,p:'8:15'}],  total:29},
+  {w:24, phase:4,label:'6–12 out',      sessions:[{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'tempo',n:'Tempo run',km:7,p:'6:15'},{t:'long',n:'Longão',km:14,p:'8:15'}],  total:27},
+  {w:25, phase:5,label:'13–19 out',     sessions:[{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'tempo',n:'Tempo run',km:5,p:'6:15'},{t:'long',n:'Longão',km:12,p:'8:15'}],  total:23},
+  {w:26, phase:5,label:'20–26 out',     sessions:[{t:'easy',n:'Corrida fácil',km:5,p:'7:45'},{t:'tempo',n:'Tempo run',km:4,p:'6:15'},{t:'long',n:'Longão',km:10,p:'8:15'}],  total:19},
+  {w:27, phase:5,label:'27 out–2 nov',  sessions:[{t:'easy',n:'Corrida fácil',km:4,p:'7:45'},{t:'tempo',n:'Tempo run',km:4,p:'6:15'},{t:'long',n:'Longão',km:8,p:'8:15'}],   total:16},
+  {w:28, phase:5,label:'3–9 nov',       sessions:[{t:'easy',n:'Corrida fácil',km:4,p:'7:45'},{t:'easy',n:'Corrida fácil',km:3,p:'7:45'},{t:'long',n:'Longão',km:6,p:'8:15'}], total:13},
+  {w:29, phase:5,label:'10–15 nov',     sessions:[{t:'easy',n:'Corrida fácil',km:3,p:'7:45'},{t:'easy',n:'Corrida fácil',km:2,p:'7:45'},{t:'long',n:'PROVA 21,1 km',km:21.1,p:'6:55'}], total:26},
+];
+
+const PHASE_LABELS = {1:'Base aeróbica',2:'Construção',3:'Pico de volume',4:'Afinamento de ritmo',5:'Taper'};
+const PHASE_CLS    = {1:'ph1',2:'ph2',3:'ph3',4:'ph4',5:'ph5'};
+const FEEL_LABELS  = {otimo:'Ótimo',bom:'Bom',regular:'Regular',dificil:'Difícil',nao:'Não fiz'};
+const FEEL_OPTS    = ['otimo','bom','regular','dificil','nao'];
+
+let state = {};
+let curWeek = 8;
+let editing = null;
+
+function sk(w,i){ return `w${w}_s${i}`; }
+function p2s(p){ if(!p)return null; const[m,s]=p.split(':').map(Number); return m*60+(s||0); }
+function s2p(s){ if(!s)return '–'; return Math.floor(s/60)+':'+(String(s%60).padStart(2,'0')); }
+
+function load(){ try{ const r=localStorage.getItem('allan_treino'); if(r) state=JSON.parse(r); }catch(e){} }
+function save(){ try{ localStorage.setItem('allan_treino',JSON.stringify(state)); }catch(e){} }
+
+function renderTopbar(){
+  const d = Math.max(0,Math.ceil((new Date('2026-11-15')-new Date())/86400000));
+  document.getElementById('days-chip').textContent = d+' dias';
+}
+
+function renderSummary(){
+  let done=0,kmDone=0,total=0,kmPlan=0;
+  PLAN.forEach(w=>w.sessions.forEach((s,i)=>{
+    total++;kmPlan+=s.km;
+    const lg=state[sk(w.w,i)];
+    if(lg?.done){done++;kmDone+=parseFloat(lg.kmReal||s.km);}
+  }));
+  document.getElementById('s-week').textContent=curWeek;
+  document.getElementById('s-done').textContent=done;
+  document.getElementById('s-done-sub').textContent=`de ${total}`;
+  document.getElementById('s-km').textContent=Math.round(kmDone);
+  const wk=PLAN[curWeek-1];
+  document.getElementById('s-rec').textContent=wk.rec?'Sim ⬇':'Não';
+  const pct=Math.round(done/total*100);
+  document.getElementById('prog-pct').textContent=pct+'%';
+  document.getElementById('prog-fill').style.width=pct+'%';
+}
+
+function renderWeekRow(){
+  const row=document.getElementById('week-row');
+  row.innerHTML='';
+  PLAN.forEach(w=>{
+    const done=w.sessions.filter((_,i)=>state[sk(w.w,i)]?.done).length;
+    const all=done===w.sessions.length;
+    const pill=document.createElement('div');
+    pill.className='week-pill'+(w.w===curWeek?' active':all?' done':w.rec?' recovery':'');
+    pill.textContent=`S${w.w} ${done}/${w.sessions.length}`;
+    pill.onclick=()=>{curWeek=w.w;editing=null;renderToday();};
+    row.appendChild(pill);
+  });
+  // scroll active into view
+  setTimeout(()=>{
+    const active=row.querySelector('.active');
+    if(active) active.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+  },50);
+}
+
+function renderWeekHeader(){
+  const w=PLAN[curWeek-1];
+  document.getElementById('wh-title').textContent=`Semana ${w.w}`;
+  document.getElementById('wh-date').textContent=w.label;
+  document.getElementById('wh-phase').innerHTML=
+    `<span class="phase-badge ${PHASE_CLS[w.phase]}">${PHASE_LABELS[w.phase]}${w.rec?' · Semana leve':''}</span>`;
+}
+
+function changeWeek(d){
+  curWeek=Math.max(1,Math.min(29,curWeek+d));
+  editing=null;
+  renderToday();
+}
+
+function renderSessions(){
+  const w=PLAN[curWeek-1];
+  const cont=document.getElementById('sessions-list');
+  cont.innerHTML='';
+  w.sessions.forEach((s,i)=>{
+    const key=sk(w.w,i);
+    const lg=state[key]||{};
+    const isEdit=editing===key;
+    const div=document.createElement('div');
+    div.className='session'+(lg.done?' logged':'');
+
+    const badgeCls={easy:'t-easy',tempo:'t-tempo',long:'t-long'}[s.t]||'t-easy';
+    const typeLabel={easy:'Fácil',tempo:'Tempo run',long:'Longão'}[s.t]||s.t;
+
+    if(lg.done&&!isEdit){
+      const diff=lg.pace?(p2s(lg.pace)-p2s(s.p)):null;
+      let diffHtml='';
+      if(diff!==null){
+        if(diff<-10) diffHtml=`<span class="pace-diff faster">▲ ${Math.abs(diff)}s</span>`;
+        else if(diff>10) diffHtml=`<span class="pace-diff slower">▼ ${Math.abs(diff)}s</span>`;
+        else diffHtml=`<span class="pace-diff onpar">✓ alvo</span>`;
+      }
+      div.innerHTML=`
+        <div class="session-top">
+          <span class="stype-badge ${badgeCls}">${typeLabel}</span>
+          <span class="session-name">${s.n}</span>
+          <span class="check-icon">✓</span>
+        </div>
+        <div class="log-summary">
+          <span class="log-chip">📍 ${lg.kmReal||s.km} km</span>
+          ${lg.pace?`<span class="log-chip">⏱ ${lg.pace} /km ${diffHtml}</span>`:''}
+          ${lg.duration?`<span class="log-chip">⏳ ${lg.duration} min</span>`:''}
+          ${lg.feel?`<span class="log-chip">${lg.feel==='otimo'?'😊':lg.feel==='bom'?'🙂':lg.feel==='regular'?'😐':lg.feel==='dificil'?'😓':'❌'} ${FEEL_LABELS[lg.feel]}</span>`:''}
+        </div>
+        ${lg.notes?`<div class="log-note">"${lg.notes}"</div>`:''}
+        <button class="edit-btn" onclick="startEdit('${key}')">Editar</button>
+      `;
+    } else {
+      const feel=lg.feelTemp||lg.feel||'';
+      div.innerHTML=`
+        <div class="session-top">
+          <span class="stype-badge ${badgeCls}">${typeLabel}</span>
+          <span class="session-name">${s.n}</span>
+          <span class="session-target">${s.km} km · ${s.p}</span>
+        </div>
+        <div class="form-grid">
+          <div class="field"><label>km rodados</label><input type="number" id="km-${key}" placeholder="${s.km}" value="${lg.kmReal||''}" step="0.1" min="0" max="35" inputmode="decimal"></div>
+          <div class="field"><label>Pace (mm:ss)</label><input type="text" id="pace-${key}" placeholder="${s.p}" value="${lg.pace||''}" inputmode="decimal"></div>
+        </div>
+        <div class="form-grid">
+          <div class="field"><label>Duração (min)</label><input type="number" id="dur-${key}" placeholder="ex: 52" value="${lg.duration||''}" min="0" max="300" inputmode="numeric"></div>
+          <div class="field"><label>Como foi</label>
+            <div class="feel-grid" style="margin-top:4px;">
+              ${FEEL_OPTS.map(f=>`<button class="feel-opt${feel===f?' sel':''}" onclick="setFeel('${key}','${f}',this)">${FEEL_LABELS[f]}</button>`).join('')}
+            </div>
+          </div>
+        </div>
+        <textarea class="notes" id="notes-${key}" placeholder="Algo de diferente? Intestino, cansaço, clima…">${lg.notes||''}</textarea>
+        <button class="save-btn" onclick="saveSession('${key}',${w.w},${i})">Salvar treino</button>
+      `;
+    }
+    cont.appendChild(div);
+  });
+}
+
+function startEdit(key){ editing=key; renderSessions(); }
+
+function setFeel(key,feel,btn){
+  btn.closest('.feel-grid').querySelectorAll('.feel-opt').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  if(!state[key]) state[key]={};
+  state[key].feelTemp=feel;
+}
+
+function saveSession(key,w,i){
+  const s=PLAN[w-1].sessions[i];
+  const km=document.getElementById('km-'+key)?.value;
+  const pace=document.getElementById('pace-'+key)?.value;
+  const dur=document.getElementById('dur-'+key)?.value;
+  const notes=document.getElementById('notes-'+key)?.value;
+  const cur=state[key]||{};
+  state[key]={
+    done:true,
+    kmReal:parseFloat(km)||s.km,
+    pace:pace||'',
+    duration:parseInt(dur)||'',
+    feel:cur.feelTemp||cur.feel||'',
+    notes:notes||''
+  };
+  editing=null;
+  save();
+  renderToday();
+}
+
+function renderToday(){
+  renderSummary();
+  renderWeekRow();
+  renderWeekHeader();
+  renderSessions();
+}
+
+/* CHARTS */
+let chartVol,chartPace,chartFeel;
+function renderCharts(){
+  const isDark=window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const gridC=isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.06)';
+  const textC=isDark?'#8A9B8C':'#5A6B5C';
+
+  const planned=PLAN.map(w=>w.total);
+  const actual=PLAN.map(w=>{
+    let km=0,any=false;
+    w.sessions.forEach((_,i)=>{const lg=state[sk(w.w,i)];if(lg?.done){km+=parseFloat(lg.kmReal||_.km);any=true;}});
+    return any?parseFloat(km.toFixed(1)):null;
+  });
+
+  if(chartVol) chartVol.destroy();
+  chartVol=new Chart(document.getElementById('chart-vol').getContext('2d'),{
+    type:'bar',
+    data:{
+      labels:PLAN.map(w=>`S${w.w}`),
+      datasets:[
+        {label:'Planejado',data:planned,backgroundColor:isDark?'rgba(126,200,32,0.15)':'rgba(59,125,17,0.12)',borderColor:isDark?'#7EC820':'#3B7D11',borderWidth:1,borderRadius:3},
+        {label:'Executado',data:actual,backgroundColor:isDark?'#7EC820':'#3B7D11',borderRadius:3},
+      ]
+    },
+    options:{responsive:true,plugins:{legend:{labels:{color:textC,font:{size:11}}}},scales:{x:{grid:{color:gridC},ticks:{color:textC,font:{size:9}}},y:{grid:{color:gridC},ticks:{color:textC,font:{size:10}}}}}
+  });
+
+  const paceSessions=[];
+  PLAN.forEach(w=>w.sessions.forEach((s,i)=>{
+    const lg=state[sk(w.w,i)];
+    if(lg?.done&&lg.pace) paceSessions.push({l:`S${w.w}`,real:p2s(lg.pace),target:p2s(s.p)});
+  }));
+
+  if(chartPace) chartPace.destroy();
+  if(paceSessions.length){
+    chartPace=new Chart(document.getElementById('chart-pace').getContext('2d'),{
+      type:'line',
+      data:{
+        labels:paceSessions.map(p=>p.l),
+        datasets:[
+          {label:'Real',data:paceSessions.map(p=>p.real),borderColor:isDark?'#3B9EE0':'#1860A5',backgroundColor:'transparent',pointRadius:4,tension:.3},
+          {label:'Alvo',data:paceSessions.map(p=>p.target),borderColor:isDark?'#F0A500':'#C07800',borderDash:[5,4],pointRadius:3,tension:.3,backgroundColor:'transparent'},
+        ]
+      },
+      options:{responsive:true,plugins:{legend:{labels:{color:textC,font:{size:11}}}},scales:{x:{grid:{color:gridC},ticks:{color:textC,font:{size:9}}},y:{reverse:true,grid:{color:gridC},ticks:{color:textC,font:{size:10},callback:v=>s2p(v)}}}}
+    });
+  }
+
+  const feelCount={otimo:0,bom:0,regular:0,dificil:0,nao:0};
+  Object.values(state).forEach(lg=>{ if(lg.done&&lg.feel) feelCount[lg.feel]=(feelCount[lg.feel]||0)+1; });
+
+  if(chartFeel) chartFeel.destroy();
+  chartFeel=new Chart(document.getElementById('chart-feel').getContext('2d'),{
+    type:'doughnut',
+    data:{
+      labels:['Ótimo','Bom','Regular','Difícil','Não fiz'],
+      datasets:[{data:[feelCount.otimo,feelCount.bom,feelCount.regular,feelCount.dificil,feelCount.nao],
+        backgroundColor:isDark?['#7EC820','#3B9EE0','#F0A500','#E05050','#4A5A4C']:['#3B7D11','#1860A5','#C07800','#B03030','#9AAA9C'],
+        borderWidth:0}]
+    },
+    options:{responsive:true,plugins:{legend:{labels:{color:textC,font:{size:11}}}}}
+  });
+}
+
+/* HISTORY */
+function renderHistory(){
+  const list=document.getElementById('hist-list');
+  const entries=[];
+  PLAN.forEach(w=>w.sessions.forEach((s,i)=>{
+    const lg=state[sk(w.w,i)];
+    if(lg?.done) entries.push({w:w.w,wLabel:w.label,s,lg});
+  }));
+  if(!entries.length){list.innerHTML='<div class="empty">Nenhum treino registrado ainda.</div>';return;}
+  list.innerHTML='';
+  [...entries].reverse().forEach(({w,wLabel,s,lg})=>{
+    const badgeCls={easy:'t-easy',tempo:'t-tempo',long:'t-long'}[s.t]||'t-easy';
+    const typeLabel={easy:'Fácil',tempo:'Tempo run',long:'Longão'}[s.t]||s.t;
+    const diff=lg.pace?(p2s(lg.pace)-p2s(s.p)):null;
+    let diffHtml='';
+    if(diff!==null){
+      if(diff<-10) diffHtml=`<span class="pace-diff faster">▲ ${Math.abs(diff)}s</span>`;
+      else if(diff>10) diffHtml=`<span class="pace-diff slower">▼ ${Math.abs(diff)}s</span>`;
+      else diffHtml=`<span class="pace-diff onpar">✓ alvo</span>`;
+    }
+    const div=document.createElement('div');
+    div.className='hist-entry';
+    div.innerHTML=`
+      <div class="hist-top">
+        <span class="stype-badge ${badgeCls}">${typeLabel}</span>
+        <span class="hist-name">${s.n}</span>
+      </div>
+      <div class="hist-week">Semana ${w} · ${wLabel}</div>
+      <div class="hist-detail" style="margin-top:5px;">
+        📍 ${lg.kmReal} km
+        ${lg.pace?` · ⏱ ${lg.pace} /km ${diffHtml}`:''}
+        ${lg.duration?` · ⏳ ${lg.duration} min`:''}
+        ${lg.feel?` · ${FEEL_LABELS[lg.feel]}`:''}
+      </div>
+      ${lg.notes?`<div class="hist-note">"${lg.notes}"</div>`:''}
+    `;
+    list.appendChild(div);
+  });
+}
+
+function showView(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if(id==='progresso') renderCharts();
+  if(id==='historico') renderHistory();
+}
+
+load();
+renderTopbar();
+renderToday();
+</script>
+</body>
+</html>
