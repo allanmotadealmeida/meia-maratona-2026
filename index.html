@@ -108,6 +108,8 @@
   .edit-btn { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 5px 10px; color: var(--text2); font-size: 12px; cursor: pointer; margin-top: 8px; }
   .reset-btn { background: none; border: 1px solid var(--red); border-radius: 8px; padding: 5px 10px; color: var(--red-text); font-size: 12px; cursor: pointer; margin-top: 8px; margin-left: 6px; }
   .today-btn { background: var(--blue-bg); border: 1px solid var(--blue); border-radius: 8px; padding: 8px 12px; cursor: pointer; color: var(--blue-text); font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .theme-btn { background: none; border: none; padding: 6px; cursor: pointer; font-size: 20px; line-height: 1; color: var(--text2); border-radius: 8px; transition: background .15s; }
+  .theme-btn:active { background: var(--card); }
 
   /* FORM */
   .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
@@ -150,7 +152,7 @@
   .pace-unit { font-size: 10px; color: var(--text2); }
 
   @media (prefers-color-scheme: light) {
-    :root {
+    :root:not([data-theme]) {
       --bg: #F4F6F4; --surface: #FFFFFF; --card: #FFFFFF; --border: #E0E5E0;
       --text: #1A1F1A; --text2: #5A6B5C; --text3: #9AAA9C;
       --green: #3B7D11; --green-dim: #3B6D11; --green-bg: #EAF3DE; --green-text: #2A5A0A;
@@ -159,8 +161,18 @@
       --red: #B03030; --red-bg: #FBEAEA; --red-text: #7A1515;
       --teal: #0A6E56; --teal-bg: #E0F3EE;
     }
-    .save-btn { color: #FFFFFF; }
+    :root:not([data-theme]) .save-btn { color: #FFFFFF; }
   }
+  :root[data-theme="light"] {
+    --bg: #F4F6F4; --surface: #FFFFFF; --card: #FFFFFF; --border: #E0E5E0;
+    --text: #1A1F1A; --text2: #5A6B5C; --text3: #9AAA9C;
+    --green: #3B7D11; --green-dim: #3B6D11; --green-bg: #EAF3DE; --green-text: #2A5A0A;
+    --amber: #C07800; --amber-bg: #FFF3DC; --amber-text: #7A4800;
+    --blue: #1860A5; --blue-bg: #E3F0FB; --blue-text: #0D4070;
+    --red: #B03030; --red-bg: #FBEAEA; --red-text: #7A1515;
+    --teal: #0A6E56; --teal-bg: #E0F3EE;
+  }
+  :root[data-theme="light"] .save-btn { color: #FFFFFF; }
 </style>
 </head>
 <body>
@@ -171,6 +183,7 @@
     <div class="topbar-sub">Allan &amp; Fernanda · 15 nov 2026</div>
   </div>
   <div class="days-chip" id="days-chip">… dias</div>
+  <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Alternar modo claro/escuro">🌙</button>
 </div>
 
 <div class="tabs">
@@ -622,8 +635,37 @@ function showView(id){
   if(id==='historico') renderHistory();
 }
 
+function toggleTheme(){
+  const root=document.documentElement;
+  const current=root.getAttribute('data-theme');
+  const isDark=window.matchMedia('(prefers-color-scheme: dark)').matches;
+  let next;
+  if(!current){
+    next = isDark ? 'light' : 'dark';
+  } else if(current==='dark'){
+    next='light';
+  } else {
+    next='dark';
+  }
+  root.setAttribute('data-theme',next);
+  document.getElementById('theme-btn').textContent = next==='dark' ? '☀️' : '🌙';
+  localStorage.setItem('allan_theme',next);
+}
+
+function initTheme(){
+  const saved=localStorage.getItem('allan_theme');
+  if(saved){
+    document.documentElement.setAttribute('data-theme',saved);
+    document.getElementById('theme-btn').textContent = saved==='dark' ? '☀️' : '🌙';
+  } else {
+    const isDark=window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.getElementById('theme-btn').textContent = isDark ? '☀️' : '🌙';
+  }
+}
+
 load();
 curWeek=currentPlanWeek();
+initTheme();
 renderTopbar();
 renderToday();
 </script>
