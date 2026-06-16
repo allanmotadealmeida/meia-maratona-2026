@@ -596,7 +596,15 @@ function renderCharts(){
         backgroundColor:isDark?['#7EC820','#3B9EE0','#F0A500','#E05050','#4A5A4C']:['#3B7D11','#1860A5','#C07800','#B03030','#9AAA9C'],
         borderWidth:0}]
     },
-    options:{responsive:true,plugins:{legend:{labels:{color:textC,font:{size:11}}}}}
+    options:{
+      responsive:true,
+      plugins:{
+        legend:{
+          position:'bottom',
+          labels:{color:textC,font:{size:11},boxWidth:10,boxHeight:10,padding:16,usePointStyle:true,pointStyle:'circle'}
+        }
+      }
+    }
   });
 }
 
