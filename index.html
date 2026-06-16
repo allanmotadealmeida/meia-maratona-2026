@@ -422,6 +422,7 @@ function renderSessions(){
         </div>
         ${lg.notes?`<div class="log-note">"${lg.notes}"</div>`:''}
         <button class="edit-btn" onclick="startEdit('${key}')">Editar</button>
+        <button class="reset-btn" onclick="resetSession('${key}')">Apagar registro</button>
       `;
     } else {
       const feel=lg.feelTemp||lg.feel||'';
