@@ -472,7 +472,7 @@ function renderSessions(){
         <div class="log-summary">
           <span class="log-chip">📍 ${lg.kmReal||s.km} km</span>
           ${lg.pace?`<span class="log-chip">⏱ ${lg.pace} /km ${diffHtml}</span>`:''}
-          ${lg.duration?`<span class="log-chip">⏳ ${lg.duration}</span>`:''}
+          ${lg.duration?`<span class="log-chip">⏳ ${lg.duration.startsWith('0:') ? lg.duration.slice(2) : lg.duration}</span>`:''}
           ${lg.local&&lg.local==='esteira'?'<span class="log-chip">🏃 Esteira</span>':''}
           ${lg.feel?`<span class="log-chip">${lg.feel==='otimo'?'😊':lg.feel==='bom'?'🙂':lg.feel==='regular'?'😐':lg.feel==='dificil'?'😓':'❌'} ${FEEL_LABELS[lg.feel]}</span>`:''}
         </div>
@@ -499,20 +499,22 @@ function renderSessions(){
           </div>
         </div>
         <div class="form-grid">
-          <div class="field"><label>Duração (mm:ss)</label>
-            <div style="display:flex;align-items:center;gap:6px;">
-              <input type="number" id="dur-min-${key}" placeholder="${Math.floor(s.km*p2s(s.p)/60)}" value="${lg.duration ? String(lg.duration).split(':')[0] : ''}" min="0" max="300" inputmode="numeric" style="width:100%;" oninput="calcPace('${key}')">
-              <span style="color:var(--text2);font-weight:600;font-size:18px;">:</span>
-              <input type="number" id="dur-sec-${key}" placeholder="${String(Math.round(s.km*p2s(s.p))%60).padStart(2,'0')}" value="${lg.duration && String(lg.duration).includes(':') ? String(lg.duration).split(':')[1] : ''}" min="0" max="59" inputmode="numeric" style="width:100%;" oninput="calcPace('${key}')">
+          <div class="field"><label>Duração (hh:mm:ss)</label>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <input type="number" id="dur-h-${key}" placeholder="${Math.floor(s.km*p2s(s.p)/3600)}" value="${lg.duration && lg.duration.split(':').length===3 ? lg.duration.split(':')[0] : '0'}" min="0" max="9" inputmode="numeric" style="width:100%;" oninput="calcPace('${key}')">
+              <span style="color:var(--text2);font-weight:700;font-size:16px;">:</span>
+              <input type="number" id="dur-min-${key}" placeholder="${String(Math.floor((s.km*p2s(s.p)%3600)/60)).padStart(2,'0')}" value="${lg.duration ? (lg.duration.split(':').length===3 ? lg.duration.split(':')[1] : lg.duration.split(':')[0]) : ''}" min="0" max="59" inputmode="numeric" style="width:100%;" oninput="calcPace('${key}')">
+              <span style="color:var(--text2);font-weight:700;font-size:16px;">:</span>
+              <input type="number" id="dur-sec-${key}" placeholder="${String(Math.round(s.km*p2s(s.p))%60).padStart(2,'0')}" value="${lg.duration && lg.duration.includes(':') ? lg.duration.split(':').slice(-1)[0] : ''}" min="0" max="59" inputmode="numeric" style="width:100%;" oninput="calcPace('${key}')">
             </div>
           </div>
           <div class="field"><label>BPM médio</label><input type="number" id="bpm-${key}" placeholder="ex: 171" value="${lg.bpm||''}" min="60" max="220" inputmode="numeric"></div>
         </div>
 
         <div class="field" style="margin-bottom:10px;">
-          <label>Tipo de treino</label>
+          <label>Tipo de piso</label>
           <div style="display:flex;gap:8px;margin-top:4px;">
-            <button class="feel-opt${(lg.local||'rua')==='rua'?' sel':''}" style="flex:1;" onclick="setLocal('${key}','rua',this)">Rua</button>
+            <button class="feel-opt${lg.local==='rua'?' sel':''}" style="flex:1;" onclick="setLocal('${key}','rua',this)">Rua</button>
             <button class="feel-opt${lg.local==='esteira'?' sel':''}" style="flex:1;" onclick="setLocal('${key}','esteira',this)">Esteira</button>
           </div>
         </div>
@@ -543,10 +545,11 @@ function startEdit(key){
 
 function calcPace(key){
   const km=parseFloat(document.getElementById('km-'+key)?.value);
-  const dMin=parseInt(document.getElementById('dur-min-'+key)?.value);
+  const dH=parseInt(document.getElementById('dur-h-'+key)?.value||'0');
+  const dMin=parseInt(document.getElementById('dur-min-'+key)?.value||'0');
   const dSec=parseInt(document.getElementById('dur-sec-'+key)?.value||'0');
-  if(km>0 && !isNaN(dMin) && dMin>0){
-    const totalSec=(dMin*60)+dSec;
+  if(km>0 && (dH>0||dMin>0)){
+    const totalSec=(dH*3600)+(dMin*60)+dSec;
     const paceSec=Math.round(totalSec/km);
     const pMin=Math.floor(paceSec/60);
     const pSec=paceSec%60;
@@ -671,10 +674,15 @@ function setFeel(key,feel,btn){
 }
 
 function setLocal(key,val,btn){
+  const already=btn.classList.contains('sel');
   btn.closest('div').querySelectorAll('.feel-opt').forEach(b=>b.classList.remove('sel'));
-  btn.classList.add('sel');
   if(!state[key]) state[key]={};
-  state[key].localTemp=val;
+  if(!already){
+    btn.classList.add('sel');
+    state[key].localTemp=val;
+  } else {
+    state[key].localTemp='';
+  }
 }
 
 function saveSession(key,w,i){
@@ -683,9 +691,10 @@ function saveSession(key,w,i){
   const paceMin=document.getElementById('pace-min-'+key)?.value;
   const paceSec=document.getElementById('pace-sec-'+key)?.value;
   const pace=(paceMin&&paceSec) ? paceMin+':'+String(paceSec).padStart(2,'0') : (paceMin ? paceMin+':00' : '');
+  const durH=document.getElementById('dur-h-'+key)?.value||'0';
   const durMin=document.getElementById('dur-min-'+key)?.value;
-  const durSec=document.getElementById('dur-sec-'+key)?.value;
-  const dur=(durMin&&durSec) ? durMin+':'+String(durSec).padStart(2,'0') : (durMin ? durMin+':00' : '');
+  const durSec=document.getElementById('dur-sec-'+key)?.value||'00';
+  const dur=durMin ? durH+':'+String(durMin).padStart(2,'0')+':'+String(durSec).padStart(2,'0') : '';
   const bpm=document.getElementById('bpm-'+key)?.value;
   const notes=document.getElementById('notes-'+key)?.value;
   const cur=state[key]||{};
