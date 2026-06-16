@@ -106,6 +106,8 @@
   .slower { background: var(--red-bg); color: var(--red-text); }
   .onpar  { background: var(--blue-bg); color: var(--blue-text); }
   .edit-btn { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 5px 10px; color: var(--text2); font-size: 12px; cursor: pointer; margin-top: 8px; }
+  .reset-btn { background: none; border: 1px solid var(--red); border-radius: 8px; padding: 5px 10px; color: var(--red-text); font-size: 12px; cursor: pointer; margin-top: 8px; margin-left: 6px; }
+  .today-btn { background: var(--blue-bg); border: 1px solid var(--blue); border-radius: 8px; padding: 8px 12px; cursor: pointer; color: var(--blue-text); font-size: 13px; font-weight: 600; white-space: nowrap; }
 
   /* FORM */
   .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
@@ -201,6 +203,7 @@
       <div class="week-hdr-date" id="wh-date">–</div>
       <div id="wh-phase"></div>
     </div>
+    <button class="today-btn" onclick="goToToday()">Hoje</button>
     <button class="week-hdr-nav" onclick="changeWeek(1)">›</button>
   </div>
 
@@ -317,7 +320,7 @@ const FEEL_LABELS  = {otimo:'Ótimo',bom:'Bom',regular:'Regular',dificil:'Difíc
 const FEEL_OPTS    = ['otimo','bom','regular','dificil','nao'];
 
 let state = {};
-let curWeek = 8;
+let curWeek = 8; // será atualizado no init
 let editing = null;
 
 function sk(w,i){ return `w${w}_s${i}`; }
@@ -477,6 +480,27 @@ function saveSession(key,w,i){
   renderToday();
 }
 
+function goToToday(){
+  curWeek=currentPlanWeek();
+  editing=null;
+  renderToday();
+}
+
+function currentPlanWeek(){
+  const start=new Date('2026-04-26');
+  const today=new Date();
+  const diff=Math.floor((today-start)/(7*86400000));
+  return Math.max(1,Math.min(29,diff+1));
+}
+
+function resetSession(key){
+  if(!confirm('Apagar este registro? Os dados serão perdidos.')) return;
+  delete state[key];
+  editing=null;
+  save();
+  renderToday();
+}
+
 function renderToday(){
   renderSummary();
   renderWeekRow();
@@ -598,6 +622,7 @@ function showView(id){
 }
 
 load();
+curWeek=currentPlanWeek();
 renderTopbar();
 renderToday();
 </script>
