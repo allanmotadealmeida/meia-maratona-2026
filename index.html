@@ -501,7 +501,7 @@ function renderSessions(){
         <div class="form-grid">
           <div class="field"><label>Duração (hh:mm:ss)</label>
             <div style="display:flex;align-items:center;gap:4px;">
-              <input type="number" id="dur-h-${key}" placeholder="${Math.floor(s.km*p2s(s.p)/3600)}" value="${lg.duration && lg.duration.split(':').length===3 ? lg.duration.split(':')[0] : '0'}" min="0" max="9" inputmode="numeric" style="width:100%;" oninput="calcPace('${key}')">
+              <input type="number" id="dur-h-${key}" placeholder="${Math.floor(s.km*p2s(s.p)/3600)===0?'00':Math.floor(s.km*p2s(s.p)/3600)}" value="${lg.duration && lg.duration.split(':').length===3 && parseInt(lg.duration.split(':')[0])>0 ? lg.duration.split(':')[0] : ''}" min="0" max="5" inputmode="numeric" style="width:100%;" oninput="calcPace('${key}')">
               <span style="color:var(--text2);font-weight:700;font-size:16px;">:</span>
               <input type="number" id="dur-min-${key}" placeholder="${String(Math.floor((s.km*p2s(s.p)%3600)/60)).padStart(2,'0')}" value="${lg.duration ? (lg.duration.split(':').length===3 ? lg.duration.split(':')[1] : lg.duration.split(':')[0]) : ''}" min="0" max="59" inputmode="numeric" style="width:100%;" oninput="calcPace('${key}')">
               <span style="color:var(--text2);font-weight:700;font-size:16px;">:</span>
@@ -691,10 +691,10 @@ function saveSession(key,w,i){
   const paceMin=document.getElementById('pace-min-'+key)?.value;
   const paceSec=document.getElementById('pace-sec-'+key)?.value;
   const pace=(paceMin&&paceSec) ? paceMin+':'+String(paceSec).padStart(2,'0') : (paceMin ? paceMin+':00' : '');
-  const durH=document.getElementById('dur-h-'+key)?.value||'0';
+  const durH=parseInt(document.getElementById('dur-h-'+key)?.value||'0');
   const durMin=document.getElementById('dur-min-'+key)?.value;
   const durSec=document.getElementById('dur-sec-'+key)?.value||'00';
-  const dur=durMin ? durH+':'+String(durMin).padStart(2,'0')+':'+String(durSec).padStart(2,'0') : '';
+  const dur=durMin ? String(durH)+':'+String(durMin).padStart(2,'0')+':'+String(durSec).padStart(2,'0') : '';
   const bpm=document.getElementById('bpm-'+key)?.value;
   const notes=document.getElementById('notes-'+key)?.value;
   const cur=state[key]||{};
