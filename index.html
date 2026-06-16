@@ -123,8 +123,28 @@
   .feel-opt.sel { background: var(--blue-bg); border-color: var(--blue); color: var(--blue-text); font-weight: 600; }
   textarea.notes { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: var(--text); font-size: 13px; resize: none; min-height: 60px; margin-top: 10px; }
   textarea.notes:focus { outline: none; border-color: var(--green-dim); }
-  .save-btn { width: 100%; margin-top: 12px; padding: 14px; background: var(--green); color: #0D0F0E; font-size: 15px; font-weight: 700; border: none; border-radius: 12px; cursor: pointer; letter-spacing: .02em; }
+  .save-btn { width: 100%; margin-top: 12px; padding: 14px; background: var(--green); color: #0D0F0E; font-size: 15px; font-weight: 700; border: none; border-radius: 12px; cursor: pointer; letter-spacing: .02em; transition: opacity .15s; }
   .save-btn:active { opacity: .85; transform: scale(.98); }
+  .save-btn:disabled { opacity: .35; cursor: not-allowed; }
+  .week-summary { border-radius: 12px; border: 1px solid var(--border); padding: 12px 14px; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; background: var(--card); }
+  .ws-bar-wrap { flex: 1; }
+  .ws-bar-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--text2); margin-bottom: 5px; }
+  .ws-bar { height: 5px; background: var(--border); border-radius: 999px; overflow: hidden; }
+  .ws-bar-fill { height: 100%; border-radius: 999px; background: var(--green); transition: width .4s; }
+  .ws-sessions { font-size: 11px; color: var(--text2); white-space: nowrap; text-align: right; }
+  .ws-km { font-size: 18px; font-weight: 700; color: var(--text); white-space: nowrap; }
+  .cond-grid { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+  .cond-opt { padding: 6px 11px; border-radius: 999px; border: 1px solid var(--border); background: var(--card); color: var(--text2); font-size: 12px; cursor: pointer; transition: all .15s; }
+  .cond-opt.sel { background: var(--teal-bg); border-color: var(--teal); color: var(--teal); font-weight: 600; }
+  .estimate-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+  .estimate-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .estimate-sub { font-size: 11px; color: var(--text2); margin-bottom: 14px; }
+  .estimate-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .estimate-item { background: var(--surface); border-radius: 10px; padding: 12px; text-align: center; border: 1px solid var(--border); }
+  .estimate-label { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+  .estimate-value { font-size: 22px; font-weight: 700; color: var(--green-text); }
+  .estimate-unit { font-size: 10px; color: var(--text3); margin-top: 2px; }
+  .estimate-note { font-size: 11px; color: var(--text3); margin-top: 10px; font-style: italic; text-align: center; }
 
   /* CHARTS VIEW */
   .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 16px; }
@@ -195,6 +215,15 @@
 
 <!-- VIEW: HOJE -->
 <div id="view-hoje" class="view active">
+  <div class="week-summary" id="week-summary">
+    <div class="ws-bar-wrap">
+      <div class="ws-bar-label"><span id="ws-label">Semana 8 · km</span><span id="ws-pct">0%</span></div>
+      <div class="ws-bar"><div class="ws-bar-fill" id="ws-bar-fill" style="width:0%"></div></div>
+      <div class="ws-sessions" id="ws-sessions">0 de 3 sessões feitas</div>
+    </div>
+    <div class="ws-km" id="ws-km">0 km</div>
+  </div>
+
   <div class="stat-grid">
     <div class="stat-card"><div class="stat-label">Semana atual</div><div class="stat-value" id="s-week">–</div><div class="stat-sub">de 29 semanas</div></div>
     <div class="stat-card"><div class="stat-label">Sessões feitas</div><div class="stat-value" id="s-done">–</div><div class="stat-sub" id="s-done-sub">de 87</div></div>
@@ -236,6 +265,23 @@
   <div class="chart-card">
     <div class="chart-title">Como me senti — distribuição</div>
     <canvas id="chart-feel" height="200"></canvas>
+  </div>
+  <div class="estimate-card" id="estimate-card">
+    <div class="estimate-title">Estimativa de prova</div>
+    <div class="estimate-sub" id="estimate-sub">Baseado nos paces registrados até agora</div>
+    <div class="estimate-grid">
+      <div class="estimate-item">
+        <div class="estimate-label">Pace estimado</div>
+        <div class="estimate-value" id="est-pace">–</div>
+        <div class="estimate-unit">min/km</div>
+      </div>
+      <div class="estimate-item">
+        <div class="estimate-label">Tempo estimado</div>
+        <div class="estimate-value" id="est-time">–</div>
+        <div class="estimate-unit">h:mm</div>
+      </div>
+    </div>
+    <div class="estimate-note" id="estimate-note">Registre mais treinos de tempo run para refinar a estimativa.</div>
   </div>
 </div>
 
@@ -446,32 +492,133 @@ function renderSessions(){
           <span class="session-target">${s.km} km · ${s.p}</span>
         </div>
         <div class="form-grid">
-          <div class="field"><label>km rodados</label><input type="number" id="km-${key}" placeholder="${s.km}" value="${lg.kmReal||''}" step="0.1" min="0" max="35" inputmode="decimal"></div>
+          <div class="field"><label>km rodados</label><input type="number" id="km-${key}" placeholder="${s.km}" value="${lg.kmReal||''}" step="0.1" min="0" max="35" inputmode="decimal" oninput="checkSaveBtn('${key}')">
           <div class="field"><label>Pace (min : seg)</label>
             <div style="display:flex;align-items:center;gap:6px;">
-              <input type="number" id="pace-min-${key}" placeholder="${s.p.split(':')[0]}" value="${lg.pace ? lg.pace.split(':')[0] : ''}" min="3" max="15" inputmode="numeric" style="width:100%;">
+              <input type="number" id="pace-min-${key}" placeholder="${s.p.split(':')[0]}" value="${lg.pace ? lg.pace.split(':')[0] : ''}" min="3" max="15" inputmode="numeric" style="width:100%;" oninput="checkSaveBtn('${key}')">
               <span style="color:var(--text2);font-weight:600;font-size:18px;">:</span>
-              <input type="number" id="pace-sec-${key}" placeholder="${s.p.split(':')[1]}" value="${lg.pace ? lg.pace.split(':')[1] : ''}" min="0" max="59" inputmode="numeric" style="width:100%;">
+              <input type="number" id="pace-sec-${key}" placeholder="${s.p.split(':')[1]}" value="${lg.pace ? lg.pace.split(':')[1] : ''}" min="0" max="59" inputmode="numeric" style="width:100%;" oninput="checkSaveBtn('${key}')">
             </div>
           </div>
         </div>
         <div class="form-grid">
           <div class="field"><label>Duração (min)</label><input type="number" id="dur-${key}" placeholder="ex: 52" value="${lg.duration||''}" min="0" max="300" inputmode="numeric"></div>
-          <div class="field"><label>Como foi</label>
-            <div class="feel-grid" style="margin-top:4px;">
-              ${FEEL_OPTS.map(f=>`<button class="feel-opt${feel===f?' sel':''}" onclick="setFeel('${key}','${f}',this)">${FEEL_LABELS[f]}</button>`).join('')}
-            </div>
+          <div class="field"><label>BPM médio</label><input type="number" id="bpm-${key}" placeholder="ex: 171" value="${lg.bpm||''}" min="60" max="220" inputmode="numeric"></div>
+        </div>
+        <div class="field" style="margin-bottom:10px;">
+          <label>Condições</label>
+          <div class="cond-grid" id="cond-${key}">
+            ${['Normal','Calor','Frio','Chuva','Vento'].map(c=>{const v=c.toLowerCase();const sel=(lg.conds||[]).includes(v);return '<button class="cond-opt'+(sel?' sel':'')+'" onclick="toggleCond(\'${key}\',\''+v+'\',this)">'+c+'</button>';}).join('')}
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:10px;"><label>Como foi</label>
+          <div class="feel-grid" style="margin-top:4px;">
+            ${FEEL_OPTS.map(f=>`<button class="feel-opt${feel===f?' sel':''}" onclick="setFeel('${key}','${f}',this)">${FEEL_LABELS[f]}</button>`).join('')}
           </div>
         </div>
         <textarea class="notes" id="notes-${key}" placeholder="Algo de diferente? Intestino, cansaço, clima…">${lg.notes||''}</textarea>
-        <button class="save-btn" onclick="saveSession('${key}',${w.w},${i})">Salvar treino</button>
+        <p style="font-size:11px;color:var(--text3);margin-top:8px;">* km e pace obrigatórios para salvar</p>
+        <button class="save-btn" id="save-${key}" onclick="saveSession('${key}',${w.w},${i})" disabled>Salvar treino</button>
       `;
     }
     cont.appendChild(div);
   });
 }
 
-function startEdit(key){ editing=key; renderSessions(); }
+function startEdit(key){
+  editing=key;
+  renderSessions();
+  // Enable save if existing data present
+  const lg=state[key]||{};
+  if(lg.kmReal&&lg.pace){
+    const btn=document.getElementById('save-'+key);
+    if(btn) btn.disabled=false;
+  }
+}
+
+function checkSaveBtn(key){
+  const km=document.getElementById('km-'+key)?.value;
+  const pMin=document.getElementById('pace-min-'+key)?.value;
+  const btn=document.getElementById('save-'+key);
+  if(btn) btn.disabled=!(km&&parseFloat(km)>0&&pMin&&parseInt(pMin)>0);
+}
+
+function toggleCond(key,cond,btn){
+  if(!state[key]) state[key]={};
+  if(!state[key].condsTemp) state[key].condsTemp=[...(state[key].conds||[])];
+  const arr=state[key].condsTemp;
+  const idx=arr.indexOf(cond);
+  if(idx>=0){ arr.splice(idx,1); btn.classList.remove('sel'); }
+  else { arr.push(cond); btn.classList.add('sel'); }
+}
+
+function renderWeekSummary(){
+  const w=PLAN[curWeek-1];
+  let kmDone=0,sesssDone=0;
+  w.sessions.forEach((s,i)=>{
+    const lg=state[sk(w.w,i)];
+    if(lg?.done){sesssDone++;kmDone+=parseFloat(lg.kmReal||s.km);}
+  });
+  const pct=Math.round(kmDone/w.total*100);
+  document.getElementById('ws-label').textContent='Sem '+w.w+' · '+Math.round(kmDone)+'/'+w.total+' km';
+  document.getElementById('ws-pct').textContent=pct+'%';
+  document.getElementById('ws-bar-fill').style.width=pct+'%';
+  document.getElementById('ws-sessions').textContent=sesssDone+' de '+w.sessions.length+' sessões feitas';
+  document.getElementById('ws-km').textContent=Math.round(kmDone)+' km';
+}
+
+function calcEstimate(){
+  const tempoSessions=[];
+  PLAN.forEach(w=>w.sessions.forEach((s,i)=>{
+    if(s.t!=='tempo') return;
+    const lg=state[sk(w.w,i)];
+    if(lg?.done&&lg.pace){
+      const realSec=p2s(lg.pace);
+      const targetSec=p2s(s.p);
+      if(realSec&&targetSec) tempoSessions.push({w:w.w,ratio:realSec/targetSec,real:realSec});
+    }
+  }));
+
+  const el_pace=document.getElementById('est-pace');
+  const el_time=document.getElementById('est-time');
+  const el_note=document.getElementById('estimate-note');
+  const el_sub=document.getElementById('estimate-sub');
+
+  if(tempoSessions.length<2){
+    el_pace.textContent='–';
+    el_time.textContent='–';
+    el_note.textContent='Registre pelo menos 2 treinos de tempo run com pace para ver a estimativa.';
+    return;
+  }
+
+  // Use last 4 tempo sessions (most recent = most relevant)
+  const recent=tempoSessions.slice(-4);
+  // Weighted average: more recent = more weight
+  let wSum=0,rSum=0;
+  recent.forEach((s,i)=>{const w=i+1;wSum+=w;rSum+=s.real*w;});
+  const avgReal=rSum/wSum;
+
+  // Target race pace is 6:55 (415s). Tempo target is 6:15 (375s).
+  // Project: if athlete runs tempo at avgReal, race pace scales proportionally
+  const tempoTarget=375; // 6:15
+  const racePaceTarget=415; // 6:55
+  const ratio=avgReal/tempoTarget;
+  const estRacePaceSec=Math.round(racePaceTarget*ratio);
+  const estTimeSec=Math.round(estRacePaceSec*21.1);
+  const estTimeMin=Math.floor(estTimeSec/60);
+  const h=Math.floor(estTimeMin/60);
+  const m=estTimeMin%60;
+
+  el_pace.textContent=s2p(estRacePaceSec);
+  el_time.textContent=h+'h'+String(m).padStart(2,'0');
+  el_sub.textContent='Baseado nos últimos '+recent.length+' tempos run registrados';
+
+  const diffSec=estRacePaceSec-racePaceTarget;
+  if(diffSec<=-15) el_note.textContent='Evolução acima do esperado — você pode chegar antes de 2h27!';
+  else if(diffSec<=15) el_note.textContent='Você está no ritmo certo para a meta de 2h27.';
+  else if(diffSec<=45) el_note.textContent='Ligeiramente acima da meta — continue consistente nos treinos.';
+  else el_note.textContent='Ainda há espaço para evoluir — foque nos tempo runs das próximas semanas.';
+}
 
 function setFeel(key,feel,btn){
   const already=btn.classList.contains('sel');
@@ -493,6 +640,7 @@ function saveSession(key,w,i){
   const paceSec=document.getElementById('pace-sec-'+key)?.value;
   const pace=(paceMin&&paceSec) ? paceMin+':'+String(paceSec).padStart(2,'0') : (paceMin ? paceMin+':00' : '');
   const dur=document.getElementById('dur-'+key)?.value;
+  const bpm=document.getElementById('bpm-'+key)?.value;
   const notes=document.getElementById('notes-'+key)?.value;
   const cur=state[key]||{};
   state[key]={
@@ -500,6 +648,8 @@ function saveSession(key,w,i){
     kmReal:parseFloat(km)||s.km,
     pace:pace||'',
     duration:parseInt(dur)||'',
+    bpm:parseInt(bpm)||'',
+    conds:cur.condsTemp||cur.conds||[],
     feel:cur.feelTemp||cur.feel||'',
     notes:notes||''
   };
@@ -531,6 +681,7 @@ function resetSession(key){
 
 function renderToday(){
   renderSummary();
+  renderWeekSummary();
   renderWeekRow();
   renderWeekHeader();
   renderSessions();
@@ -653,7 +804,7 @@ function showView(id){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('view-'+id).classList.add('active');
   event.currentTarget.classList.add('active');
-  if(id==='progresso') renderCharts();
+  if(id==='progresso'){renderCharts();calcEstimate();}
   if(id==='historico') renderHistory();
 }
 
