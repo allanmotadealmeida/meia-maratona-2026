@@ -447,7 +447,13 @@ function renderSessions(){
         </div>
         <div class="form-grid">
           <div class="field"><label>km rodados</label><input type="number" id="km-${key}" placeholder="${s.km}" value="${lg.kmReal||''}" step="0.1" min="0" max="35" inputmode="decimal"></div>
-          <div class="field"><label>Pace (mm:ss)</label><input type="text" id="pace-${key}" placeholder="${s.p}" value="${lg.pace||''}" inputmode="decimal"></div>
+          <div class="field"><label>Pace (min : seg)</label>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <input type="number" id="pace-min-${key}" placeholder="${s.p.split(':')[0]}" value="${lg.pace ? lg.pace.split(':')[0] : ''}" min="3" max="15" inputmode="numeric" style="width:100%;">
+              <span style="color:var(--text2);font-weight:600;font-size:18px;">:</span>
+              <input type="number" id="pace-sec-${key}" placeholder="${s.p.split(':')[1]}" value="${lg.pace ? lg.pace.split(':')[1] : ''}" min="0" max="59" inputmode="numeric" style="width:100%;">
+            </div>
+          </div>
         </div>
         <div class="form-grid">
           <div class="field"><label>Duração (min)</label><input type="number" id="dur-${key}" placeholder="ex: 52" value="${lg.duration||''}" min="0" max="300" inputmode="numeric"></div>
@@ -468,16 +474,24 @@ function renderSessions(){
 function startEdit(key){ editing=key; renderSessions(); }
 
 function setFeel(key,feel,btn){
+  const already=btn.classList.contains('sel');
   btn.closest('.feel-grid').querySelectorAll('.feel-opt').forEach(b=>b.classList.remove('sel'));
-  btn.classList.add('sel');
-  if(!state[key]) state[key]={};
-  state[key].feelTemp=feel;
+  if(!already){
+    btn.classList.add('sel');
+    if(!state[key]) state[key]={};
+    state[key].feelTemp=feel;
+  } else {
+    if(!state[key]) state[key]={};
+    state[key].feelTemp='';
+  }
 }
 
 function saveSession(key,w,i){
   const s=PLAN[w-1].sessions[i];
   const km=document.getElementById('km-'+key)?.value;
-  const pace=document.getElementById('pace-'+key)?.value;
+  const paceMin=document.getElementById('pace-min-'+key)?.value;
+  const paceSec=document.getElementById('pace-sec-'+key)?.value;
+  const pace=(paceMin&&paceSec) ? paceMin+':'+String(paceSec).padStart(2,'0') : (paceMin ? paceMin+':00' : '');
   const dur=document.getElementById('dur-'+key)?.value;
   const notes=document.getElementById('notes-'+key)?.value;
   const cur=state[key]||{};
@@ -665,9 +679,9 @@ function initTheme(){
 
 load();
 curWeek=currentPlanWeek();
-initTheme();
 renderTopbar();
 renderToday();
+initTheme();
 </script>
 </body>
 </html>
