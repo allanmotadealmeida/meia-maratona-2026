@@ -503,7 +503,7 @@ function renderSessions(){
           <span class="log-chip">📍 ${lg.kmReal||s.km} km</span>
           ${lg.pace?`<span class="log-chip">⏱ ${lg.pace} /km ${diffHtml}</span>`:''}
           ${lg.duration?`<span class="log-chip">⏳ ${durDisplay(lg.duration)}</span>`:''}
-          ${lg.local&&lg.local==='esteira'?'<span class="log-chip">🏃 Esteira</span>':''}
+          ${lg.local==='esteira'?'<span class="log-chip">🏃 Esteira</span>':lg.local==='rua'?'<span class="log-chip">🛣️ Rua</span>':''}
           ${lg.feel?`<span class="log-chip">${lg.feel==='otimo'?'😊':lg.feel==='bom'?'🙂':lg.feel==='regular'?'😐':lg.feel==='dificil'?'😓':'❌'} ${FEEL_LABELS[lg.feel]}</span>`:''}
         </div>
         ${lg.notes?`<div class="log-note">"${lg.notes}"</div>`:''}
@@ -926,7 +926,7 @@ function renderHistory(){
           ${lg.pace?` · ⏱ ${lg.pace} /km ${diffHtml}`:''}
           ${lg.duration?` · ⏳ ${durDisplay(lg.duration)}`:''}
           ${lg.bpm?` · ❤️ ${lg.bpm} bpm`:''}
-          ${lg.local==='esteira'?' · 🏃 Esteira':''}
+          ${lg.local==='esteira'?' · 🏃 Esteira':lg.local==='rua'?' · 🛣️ Rua':''}
           ${lg.feel?` · ${FEEL_LABELS[lg.feel]}`:''}
         </div>
         ${lg.notes?`<div class="hist-note">"${lg.notes}"</div>`:''}
