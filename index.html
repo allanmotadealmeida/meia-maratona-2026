@@ -196,6 +196,13 @@
  --teal: #0A6E56; --teal-bg: #E0F3EE;
  }
  :root[data-theme="light"] .save-btn { color: #FFFFFF; }
+  .data-section { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+  .data-section h4 { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .data-section p { font-size: 12px; color: var(--text2); margin-bottom: 12px; line-height: 1.5; }
+  .data-btn { width: 100%; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; margin-bottom: 8px; }
+  .data-btn.export { background: var(--green-bg); color: var(--green-text); border: 1px solid var(--green-dim); }
+  .data-btn.import { background: var(--blue-bg); color: var(--blue-text); border: 1px solid var(--blue); }
+  .data-textarea { width: 100%; min-height: 80px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px; color: var(--text); font-size: 11px; font-family: monospace; resize: vertical; margin-bottom: 8px; }
 </style>
 </head>
 <body>
@@ -340,6 +347,23 @@
  · Intestino: tome cafeína ao acordar, espere 20–30 min
  </div>
  </div>
+  <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+    <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;">Dados & Backup</div>
+    <div class="data-section">
+      <h4>Exportar dados</h4>
+      <p>Copia todos os seus registros. Use para transferir entre Safari e o app da tela inicial.</p>
+      <button class="data-btn export" onclick="exportData()">Exportar meus dados</button>
+      <textarea class="data-textarea" id="export-output" placeholder="Os dados aparecem aqui..." readonly></textarea>
+      <div id="export-msg" style="font-size:11px;color:var(--green-text);display:none;">Selecione o texto acima e copie!</div>
+    </div>
+    <div class="data-section">
+      <h4>Importar dados</h4>
+      <p>Cole aqui os dados exportados. Atenção: substitui todos os dados atuais sem recuperação.</p>
+      <textarea class="data-textarea" id="import-input" placeholder="Cole os dados exportados aqui..."></textarea>
+      <button class="data-btn import" onclick="importData()">Importar e substituir dados</button>
+      <div id="import-msg" style="font-size:11px;display:none;"></div>
+    </div>
+  </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -1015,6 +1039,41 @@ function initTheme(){
  } else {
  const isDark=window.matchMedia('(prefers-color-scheme: dark)').matches;
  document.getElementById('theme-btn').innerHTML = isDark ? "<svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='5'/><line x1='12' y1='1' x2='12' y2='3'/><line x1='12' y1='21' x2='12' y2='23'/><line x1='4.22' y1='4.22' x2='5.64' y2='5.64'/><line x1='18.36' y1='18.36' x2='19.78' y2='19.78'/><line x1='1' y1='12' x2='3' y2='12'/><line x1='21' y1='12' x2='23' y2='12'/><line x1='4.22' y1='19.78' x2='5.64' y2='18.36'/><line x1='18.36' y1='5.64' x2='19.78' y2='4.22'/></svg>" : "<svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z'/></svg>";
+ }
+}
+
+function exportData(){
+ const data=localStorage.getItem('allan_treino')||'{}';
+ const el=document.getElementById('export-output');
+ const msg=document.getElementById('export-msg');
+ el.value=data;
+ el.select();
+ el.setSelectionRange(0,99999);
+ try{ document.execCommand('copy'); msg.textContent='Copiado! Cole no outro dispositivo.'; }
+ catch(e){ msg.textContent='Selecione o texto acima e copie manualmente.'; }
+ msg.style.display='block';
+}
+
+function importData(){
+ const input=document.getElementById('import-input').value.trim();
+ const msg=document.getElementById('import-msg');
+ if(!input){ msg.textContent='Cole os dados antes de importar.'; msg.style.color='var(--red-text)'; msg.style.display='block'; return; }
+ try{
+   const parsed=JSON.parse(input);
+   if(typeof parsed!=='object'||Array.isArray(parsed)) throw new Error('Formato inválido');
+   if(!confirm('Isso vai substituir todos os seus dados atuais. Tem certeza?')) return;
+   localStorage.setItem('allan_treino',input);
+   load();
+   renderToday();
+   renderHistory();
+   msg.textContent='Dados importados com sucesso!';
+   msg.style.color='var(--green-text)';
+   msg.style.display='block';
+   document.getElementById('import-input').value='';
+ } catch(e){
+   msg.textContent='Erro: dados inválidos. Verifique se copiou corretamente.';
+   msg.style.color='var(--red-text)';
+   msg.style.display='block';
  }
 }
 
