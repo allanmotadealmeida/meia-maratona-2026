@@ -156,6 +156,11 @@
   .hist-detail { font-size: 12px; color: var(--text2); }
   .hist-note { font-size: 11px; color: var(--text3); margin-top: 4px; font-style: italic; }
   .empty { text-align: center; padding: 40px 16px; color: var(--text3); font-size: 13px; }
+  .hist-week-header { font-size: 12px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: .05em; margin: 18px 0 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .hist-week-header:first-child { margin-top: 0; }
+  .hist-actions { display: flex; gap: 6px; margin-top: 10px; }
+  .hist-edit-btn { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 5px 12px; color: var(--text2); font-size: 12px; cursor: pointer; }
+  .hist-del-btn { background: none; border: 1px solid var(--red); border-radius: 8px; padding: 5px 12px; color: var(--red-text); font-size: 12px; cursor: pointer; }
 
   /* PACE GUIDE */
   .pace-guide { background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; margin-bottom: 16px; }
@@ -382,6 +387,26 @@ let editing = null;
 function sk(w,i){ return `w${w}_s${i}`; }
 function p2s(p){ if(!p)return null; const[m,s]=p.split(':').map(Number); return m*60+(s||0); }
 function s2p(s){ if(!s)return '–'; return Math.floor(s/60)+':'+(String(s%60).padStart(2,'0')); }
+function durParts(dur){
+  // Returns {h,m,s} as strings from any saved format (number, "mm", "mm:ss", "h:mm:ss")
+  if(dur===undefined||dur===null||dur==='') return {h:'',m:'',s:''};
+  const str=String(dur);
+  const parts=str.split(':');
+  if(parts.length===3) return {h:parseInt(parts[0])>0?parts[0]:'', m:parts[1], s:parts[2]};
+  if(parts.length===2) return {h:'', m:parts[0], s:parts[1]};
+  return {h:'', m:parts[0], s:''};
+}
+function durDisplay(dur){
+  if(dur===undefined||dur===null||dur==='') return '';
+  const str=String(dur);
+  const parts=str.split(':');
+  if(parts.length===3){
+    const h=parseInt(parts[0]);
+    return h>0 ? h+':'+parts[1]+':'+parts[2] : parts[1]+':'+parts[2];
+  }
+  if(parts.length===2) return str;
+  return str+' min';
+}
 
 function load(){ try{ const r=localStorage.getItem('allan_treino'); if(r) state=JSON.parse(r); }catch(e){} }
 function save(){ try{ localStorage.setItem('allan_treino',JSON.stringify(state)); }catch(e){} }
@@ -476,7 +501,7 @@ function renderSessions(){
         <div class="log-summary">
           <span class="log-chip">📍 ${lg.kmReal||s.km} km</span>
           ${lg.pace?`<span class="log-chip">⏱ ${lg.pace} /km ${diffHtml}</span>`:''}
-          ${lg.duration?`<span class="log-chip">⏳ ${lg.duration.startsWith('0:') ? lg.duration.slice(2) : lg.duration}</span>`:''}
+          ${lg.duration?`<span class="log-chip">⏳ ${durDisplay(lg.duration)}</span>`:''}
           ${lg.local&&lg.local==='esteira'?'<span class="log-chip">🏃 Esteira</span>':''}
           ${lg.feel?`<span class="log-chip">${lg.feel==='otimo'?'😊':lg.feel==='bom'?'🙂':lg.feel==='regular'?'😐':lg.feel==='dificil'?'😓':'❌'} ${FEEL_LABELS[lg.feel]}</span>`:''}
         </div>
@@ -505,11 +530,11 @@ function renderSessions(){
         <div class="form-grid">
           <div class="field"><label>Duração (hh:mm:ss)</label>
             <div style="display:flex;align-items:center;gap:4px;">
-              <input type="number" id="dur-h-${key}" placeholder="${String(Math.floor(s.km*p2s(s.p)/3600)).padStart(2,'0')}" value="${lg.duration && lg.duration.split(':').length===3 && parseInt(lg.duration.split(':')[0])>0 ? lg.duration.split(':')[0] : ''}" min="0" max="5" inputmode="numeric" style="width:100%;" oninput="calcPace('${key}')">
+              <input type="number" id="dur-h-${key}" placeholder="${String(Math.floor(s.km*p2s(s.p)/3600)).padStart(2,'0')}" value="${durParts(lg.duration).h}" min="0" max="5" inputmode="numeric" style="width:100%;" oninput="calcPace('${key}')">
               <span style="color:var(--text2);font-weight:700;font-size:16px;">:</span>
-              <input type="number" id="dur-min-${key}" placeholder="${String(Math.floor((s.km*p2s(s.p)%3600)/60)).padStart(2,'0')}" value="${lg.duration ? (lg.duration.split(':').length===3 ? lg.duration.split(':')[1] : lg.duration.split(':')[0]) : ''}" min="0" max="59" inputmode="numeric" style="width:100%;" oninput="calcPace('${key}')">
+              <input type="number" id="dur-min-${key}" placeholder="${String(Math.floor((s.km*p2s(s.p)%3600)/60)).padStart(2,'0')}" value="${durParts(lg.duration).m}" min="0" max="59" inputmode="numeric" style="width:100%;" oninput="calcPace('${key}')">
               <span style="color:var(--text2);font-weight:700;font-size:16px;">:</span>
-              <input type="number" id="dur-sec-${key}" placeholder="${String(Math.round(s.km*p2s(s.p))%60).padStart(2,'0')}" value="${lg.duration && lg.duration.includes(':') ? lg.duration.split(':').slice(-1)[0] : ''}" min="0" max="59" inputmode="numeric" style="width:100%;" oninput="calcPace('${key}')">
+              <input type="number" id="dur-sec-${key}" placeholder="${String(Math.round(s.km*p2s(s.p))%60).padStart(2,'0')}" value="${durParts(lg.duration).s}" min="0" max="59" inputmode="numeric" style="width:100%;" oninput="calcPace('${key}')">
             </div>
           </div>
           <div class="field"><label>BPM médio</label><input type="number" id="bpm-${key}" placeholder="ex: 171" value="${lg.bpm||''}" min="60" max="220" inputmode="numeric"></div>
@@ -854,41 +879,90 @@ function renderCharts(){
 /* HISTORY */
 function renderHistory(){
   const list=document.getElementById('hist-list');
-  const entries=[];
-  PLAN.forEach(w=>w.sessions.forEach((s,i)=>{
-    const lg=state[sk(w.w,i)];
-    if(lg?.done) entries.push({w:w.w,wLabel:w.label,s,lg});
-  }));
-  if(!entries.length){list.innerHTML='<div class="empty">Nenhum treino registrado ainda.</div>';return;}
+  // Group entries by week, most recent week first
+  const weekGroups=[];
+  for(let wi=PLAN.length-1; wi>=0; wi--){
+    const pw=PLAN[wi];
+    const weekEntries=[];
+    pw.sessions.forEach((s,i)=>{
+      const lg=state[sk(pw.w,i)];
+      if(lg?.done) weekEntries.push({w:pw.w,wLabel:pw.label,s,i,lg,key:sk(pw.w,i)});
+    });
+    if(weekEntries.length) weekGroups.push({week:pw.w,label:pw.label,entries:weekEntries});
+  }
+
+  if(!weekGroups.length){list.innerHTML='<div class="empty">Nenhum treino registrado ainda.</div>';return;}
   list.innerHTML='';
-  [...entries].reverse().forEach(({w,wLabel,s,lg})=>{
-    const badgeCls={easy:'t-easy',tempo:'t-tempo',long:'t-long'}[s.t]||'t-easy';
-    const typeLabel={easy:'Fácil',tempo:'Tempo run',long:'Longão'}[s.t]||s.t;
-    const diff=lg.pace?(p2s(lg.pace)-p2s(s.p)):null;
-    let diffHtml='';
-    if(diff!==null){
-      if(diff<-10) diffHtml=`<span class="pace-diff faster">▲ ${Math.abs(diff)}s</span>`;
-      else if(diff>10) diffHtml=`<span class="pace-diff slower">▼ ${Math.abs(diff)}s</span>`;
-      else diffHtml=`<span class="pace-diff onpar">✓ alvo</span>`;
-    }
-    const div=document.createElement('div');
-    div.className='hist-entry';
-    div.innerHTML=`
-      <div class="hist-top">
-        <span class="stype-badge ${badgeCls}">${typeLabel}</span>
-        <span class="hist-name">${s.n}</span>
-      </div>
-      <div class="hist-week">Semana ${w} · ${wLabel}</div>
-      <div class="hist-detail" style="margin-top:5px;">
-        📍 ${lg.kmReal} km
-        ${lg.pace?` · ⏱ ${lg.pace} /km ${diffHtml}`:''}
-        ${lg.duration?` · ⏳ ${lg.duration} min`:''}
-        ${lg.feel?` · ${FEEL_LABELS[lg.feel]}`:''}
-      </div>
-      ${lg.notes?`<div class="hist-note">"${lg.notes}"</div>`:''}
-    `;
-    list.appendChild(div);
+
+  weekGroups.forEach(group=>{
+    const header=document.createElement('div');
+    header.className='hist-week-header';
+    header.textContent='Semana '+group.week+' · '+group.label;
+    list.appendChild(header);
+
+    group.entries.forEach(({w,wLabel,s,i,lg,key})=>{
+      const badgeCls={easy:'t-easy',tempo:'t-tempo',long:'t-long'}[s.t]||'t-easy';
+      const typeLabel={easy:'Fácil',tempo:'Tempo run',long:'Longão'}[s.t]||s.t;
+      const diff=lg.pace?(p2s(lg.pace)-p2s(s.p)):null;
+      let diffHtml='';
+      if(diff!==null){
+        if(diff<-10) diffHtml=`<span class="pace-diff faster">▲ ${Math.abs(diff)}s</span>`;
+        else if(diff>10) diffHtml=`<span class="pace-diff slower">▼ ${Math.abs(diff)}s</span>`;
+        else diffHtml=`<span class="pace-diff onpar">✓ alvo</span>`;
+      }
+      const div=document.createElement('div');
+      div.className='hist-entry';
+      div.innerHTML=`
+        <div class="hist-top">
+          <span class="stype-badge ${badgeCls}">${typeLabel}</span>
+          <span class="hist-name">${s.n}</span>
+        </div>
+        <div class="hist-detail" style="margin-top:5px;">
+          📍 ${lg.kmReal} km
+          ${lg.pace?` · ⏱ ${lg.pace} /km ${diffHtml}`:''}
+          ${lg.duration?` · ⏳ ${durDisplay(lg.duration)}`:''}
+          ${lg.bpm?` · ❤️ ${lg.bpm} bpm`:''}
+          ${lg.local==='esteira'?' · 🏃 Esteira':''}
+          ${lg.feel?` · ${FEEL_LABELS[lg.feel]}`:''}
+        </div>
+        ${lg.notes?`<div class="hist-note">"${lg.notes}"</div>`:''}
+        <div class="hist-actions">
+          <button class="hist-edit-btn" onclick="editFromHistory('${key}',${w})">Editar</button>
+          <button class="hist-del-btn" onclick="deleteFromHistory('${key}')">Apagar</button>
+        </div>
+      `;
+      list.appendChild(div);
+    });
   });
+}
+
+function editFromHistory(key,week){
+  // Switch to Hoje tab, navigate to the week, open edit for that session
+  curWeek=week;
+  editing=key;
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('view-hoje').classList.add('active');
+  document.querySelectorAll('.tab')[0].classList.add('active');
+  renderToday();
+  // Enable save and scroll to session
+  setTimeout(()=>{
+    const lg=state[key]||{};
+    if(lg.kmReal&&lg.pace){
+      const btn=document.getElementById('save-'+key);
+      if(btn) btn.disabled=false;
+    }
+    const el=document.getElementById('km-'+key);
+    if(el) el.closest('.session').scrollIntoView({behavior:'smooth',block:'center'});
+  },100);
+}
+
+function deleteFromHistory(key){
+  if(!confirm('Apagar este registro? Os dados serão perdidos.')) return;
+  delete state[key];
+  save();
+  renderHistory();
+  renderToday();
 }
 
 function showView(id){
