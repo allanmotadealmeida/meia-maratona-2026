@@ -485,6 +485,7 @@ function renderSessions(){
 
  const badgeCls={easy:'t-easy',tempo:'t-tempo',long:'t-long'}[s.t]||'t-easy';
  const typeLabel={easy:'Fácil',tempo:'Tempo run',long:'Longão'}[s.t]||s.t;
+ const isNaoFiz=lg.done&&lg.feel==='nao';
 
  if(lg.done&&!isEdit){
  const diff=lg.pace?(p2s(lg.pace)-p2s(s.p)):null;
@@ -501,11 +502,11 @@ function renderSessions(){
  <span class="check-icon">✓</span>
  </div>
  <div class="log-summary">
- <span class="log-chip"> ${lg.kmReal||s.km} km</span>
- ${lg.pace?`<span class="log-chip"> ${lg.pace} /km ${diffHtml}</span>`:''}
- ${lg.duration?`<span class="log-chip"> ${durDisplay(lg.duration)}</span>`:''}
- ${lg.bpm?`<span class="log-chip"> BPM ${lg.bpm}</span>`:''}
- ${lg.local==='esteira'?'<span class="log-chip"> Esteira</span>':lg.local==='rua'?'<span class="log-chip"> Rua</span>':''}
+ ${!isNaoFiz?`<span class="log-chip"> ${lg.kmReal||s.km} km</span>`:''}
+ ${!isNaoFiz&&lg.pace?`<span class="log-chip"> ${lg.pace} /km ${diffHtml}</span>`:''}
+ ${!isNaoFiz&&lg.duration?`<span class="log-chip"> ${durDisplay(lg.duration)}</span>`:''}
+ ${!isNaoFiz&&lg.bpm?`<span class="log-chip"> BPM ${lg.bpm}</span>`:''}
+ ${!isNaoFiz&&lg.local==='esteira'?'<span class="log-chip"> Esteira</span>':!isNaoFiz&&lg.local==='rua'?'<span class="log-chip"> Rua</span>':''}
  ${lg.feel?`<span class="log-chip">${lg.feel==='otimo'?'':lg.feel==='bom'?'':lg.feel==='regular'?'':lg.feel==='dificil'?'':''} ${FEEL_LABELS[lg.feel]}</span>`:''}
  </div>
  ${lg.notes?`<div class="log-note">"${lg.notes}"</div>`:''}
@@ -735,16 +736,18 @@ function saveSession(key,w,i){
  const bpm=document.getElementById('bpm-'+key)?.value;
  const notes=document.getElementById('notes-'+key)?.value;
  const cur=state[key]||{};
- state[key]={
- done:true,
- kmReal:parseFloat(km)||s.km,
- pace:pace||'',
- duration:dur||'',
- bpm:parseInt(bpm)||'',
- local:cur.localTemp||cur.local||'rua',
- feel:cur.feelTemp||cur.feel||'',
- notes:notes||''
- };
+ const feelToSave=cur.feelTemp||cur.feel||'';
+  const isNaoSave=feelToSave==='nao';
+  state[key]={
+    done:true,
+    kmReal:isNaoSave?'':(parseFloat(km)||s.km),
+    pace:isNaoSave?'':(pace||''),
+    duration:isNaoSave?'':(dur||''),
+    bpm:isNaoSave?'':(parseInt(bpm)||''),
+    local:isNaoSave?'':(cur.localTemp||cur.local||''),
+    feel:feelToSave,
+    notes:notes||''
+  };
  editing=null;
  save();
  renderToday();
