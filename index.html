@@ -420,10 +420,14 @@ function renderWeekRow(){
     pill.onclick=()=>{curWeek=w.w;editing=null;renderToday();};
     row.appendChild(pill);
   });
-  // scroll active into view
+  // scroll active pill into view horizontally only (avoid moving page vertically)
   setTimeout(()=>{
     const active=row.querySelector('.active');
-    if(active) active.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+    if(active){
+      const scroller=row.parentElement;
+      const offset=active.offsetLeft-(scroller.clientWidth/2)+(active.clientWidth/2);
+      scroller.scrollTo({left:offset,behavior:'smooth'});
+    }
   },50);
 }
 
