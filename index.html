@@ -387,7 +387,7 @@ function load(){ try{ const r=localStorage.getItem('allan_treino'); if(r) state=
 function save(){ try{ localStorage.setItem('allan_treino',JSON.stringify(state)); }catch(e){} }
 
 function renderTopbar(){
-  const d = Math.max(0,Math.ceil((new Date('2026-11-15')-new Date())/86400000));
+  const race=new Date(2026,10,15); const today=new Date(); today.setHours(0,0,0,0); const d=Math.max(0,Math.round((race-today)/86400000));
   document.getElementById('days-chip').textContent = d+' dias';
 }
 
