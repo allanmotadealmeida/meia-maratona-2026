@@ -392,9 +392,10 @@ function durParts(dur){
   if(dur===undefined||dur===null||dur==='') return {h:'',m:'',s:''};
   const str=String(dur);
   const parts=str.split(':');
-  if(parts.length===3) return {h:parseInt(parts[0])>0?parts[0]:'', m:parts[1], s:parts[2]};
-  if(parts.length===2) return {h:'', m:parts[0], s:parts[1]};
-  return {h:'', m:parts[0], s:''};
+  const pad=v=>String(parseInt(v)||0).padStart(2,'0');
+  if(parts.length===3) return {h:parseInt(parts[0])>0?String(parseInt(parts[0])):'', m:pad(parts[1]), s:pad(parts[2])};
+  if(parts.length===2) return {h:'', m:pad(parts[0]), s:pad(parts[1])};
+  return {h:'', m:pad(parts[0]), s:''};
 }
 function durDisplay(dur){
   if(dur===undefined||dur===null||dur==='') return '';
@@ -720,10 +721,13 @@ function saveSession(key,w,i){
   const paceMin=document.getElementById('pace-min-'+key)?.value;
   const paceSec=document.getElementById('pace-sec-'+key)?.value;
   const pace=(paceMin&&paceSec) ? paceMin+':'+String(paceSec).padStart(2,'0') : (paceMin ? paceMin+':00' : '');
-  const durH=parseInt(document.getElementById('dur-h-'+key)?.value||'0');
-  const durMin=document.getElementById('dur-min-'+key)?.value;
-  const durSec=document.getElementById('dur-sec-'+key)?.value||'00';
-  const dur=durMin ? String(durH)+':'+String(durMin).padStart(2,'0')+':'+String(durSec).padStart(2,'0') : '';
+  const durH=parseInt(document.getElementById('dur-h-'+key)?.value)||0;
+  const durMinRaw=document.getElementById('dur-min-'+key)?.value;
+  const durMin=parseInt(durMinRaw)||0;
+  const durSec=parseInt(document.getElementById('dur-sec-'+key)?.value)||0;
+  // Save duration if any of h/m/s was filled
+  const hasDur=(durH>0)||(durMinRaw!==''&&durMinRaw!==undefined)||(durSec>0);
+  const dur=hasDur ? durH+':'+String(durMin).padStart(2,'0')+':'+String(durSec).padStart(2,'0') : '';
   const bpm=document.getElementById('bpm-'+key)?.value;
   const notes=document.getElementById('notes-'+key)?.value;
   const cur=state[key]||{};
