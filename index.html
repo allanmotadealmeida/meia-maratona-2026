@@ -567,10 +567,15 @@ function renderSessions(){
 
 function startEdit(key){
  editing=key;
+ // Pre-load feelTemp and localTemp so checkSaveBtn works on re-edit
+ if(!state[key]) state[key]={};
+ state[key].feelTemp=state[key].feel||'';
+ state[key].localTemp=state[key].local||'';
  renderSessions();
- // Enable save if existing data present
- const lg=state[key]||{};
- if(lg.kmReal&&lg.pace){
+ // Enable save based on saved data
+ const lg=state[key];
+ const isNao=lg.feel==='nao';
+ if(isNao||(lg.kmReal&&lg.pace)){
  const btn=document.getElementById('save-'+key);
  if(btn) btn.disabled=false;
  }
@@ -929,7 +934,7 @@ function renderHistory(){
  <span class="hist-name">${s.n}</span>${lg.feel==='nao'?'<span style="font-size:11px;color:var(--text3);margin-left:6px;">não realizado</span>':''}
  </div>
  <div class="hist-detail" style="margin-top:5px;">
- ${lg.kmReal} km
+ ${lg.kmReal?lg.kmReal+' km':''}
  ${lg.pace?` · ${lg.pace} /km ${diffHtml}`:''}
  ${lg.duration?` · ${durDisplay(lg.duration)}`:''}
  ${lg.bpm?` · BPM: ${lg.bpm} bpm`:''}
