@@ -69,6 +69,7 @@
  .week-row { display: flex; gap: 8px; width: max-content; }
  .week-pill { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--card); font-size: 12px; font-weight: 500; color: var(--text2); cursor: pointer; white-space: nowrap; transition: all .15s; }
  .week-pill.done { background: var(--green-bg); border-color: var(--green-dim); color: var(--green-text); }
+ .week-pill.partial { background: transparent; border-color: var(--green-dim); color: var(--green-text); opacity: 0.7; }
  .week-pill.active { background: var(--blue-bg); border-color: var(--blue); color: var(--blue-text); }
  .week-pill.recovery { background: var(--amber-bg); border-color: var(--amber); color: var(--amber-text); }
 
@@ -238,7 +239,7 @@
  <div class="stat-card"><div class="stat-label">Semana atual</div><div class="stat-value" id="s-week">–</div><div class="stat-sub">de 29 semanas</div></div>
  <div class="stat-card"><div class="stat-label">Sessões feitas</div><div class="stat-value" id="s-done">–</div><div class="stat-sub" id="s-done-sub">de 87</div></div>
  <div class="stat-card"><div class="stat-label">km rodados</div><div class="stat-value" id="s-km">–</div><div class="stat-sub">acumulados</div></div>
- <div class="stat-card"><div class="stat-label">Próximo treino</div><div class="stat-value" id="s-next-type" style="font-size:16px;margin-top:2px;">–</div><div class="stat-sub" id="s-next-km">–</div></div>
+ <div class="stat-card" id="next-card" onclick="goToNextWorkout()" style="cursor:pointer;"><div class="stat-label">Próximo treino</div><div class="stat-value" id="s-next-type" style="font-size:16px;margin-top:2px;">–</div><div class="stat-sub" id="s-next-km">–</div></div>
  </div>
 
  <div class="prog-wrap">
@@ -369,35 +370,35 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
 const PLAN = [
- {w:1, phase:1,label:'26 abr–2 mai', sessions:[{t:'easy',n:'Corrida fácil',km:5,p:'7:45'},{t:'easy',n:'Corrida fácil',km:5,p:'7:45'},{t:'long',n:'Longão',km:8,p:'8:15'}], total:18},
- {w:2, phase:1,label:'3–9 mai', sessions:[{t:'easy',n:'Corrida fácil',km:5,p:'7:45'},{t:'tempo',n:'Tempo run',km:5,p:'6:15'},{t:'long',n:'Longão',km:9,p:'8:15'}], total:19},
- {w:3, phase:1,label:'10–16 mai', sessions:[{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'tempo',n:'Tempo run',km:5,p:'6:15'},{t:'long',n:'Longão',km:10,p:'8:15'}], total:21},
- {w:4, phase:1,label:'17–23 mai', sessions:[{t:'easy',n:'Corrida fácil',km:4,p:'7:45'},{t:'easy',n:'Corrida fácil',km:4,p:'7:45'},{t:'long',n:'Longão',km:7,p:'8:15'}], total:15,rec:true},
- {w:5, phase:1,label:'24–31 mai', sessions:[{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'tempo',n:'Tempo run',km:6,p:'6:15'},{t:'long',n:'Longão',km:11,p:'8:15'}], total:23},
+ {w:1, phase:1,label:'27 abr–3 mai', sessions:[{t:'easy',n:'Corrida fácil',km:5,p:'7:45'},{t:'easy',n:'Corrida fácil',km:5,p:'7:45'},{t:'long',n:'Longão',km:8,p:'8:15'}], total:18},
+ {w:2, phase:1,label:'4–10 mai', sessions:[{t:'easy',n:'Corrida fácil',km:5,p:'7:45'},{t:'tempo',n:'Tempo run',km:5,p:'6:15'},{t:'long',n:'Longão',km:9,p:'8:15'}], total:19},
+ {w:3, phase:1,label:'11–17 mai', sessions:[{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'tempo',n:'Tempo run',km:5,p:'6:15'},{t:'long',n:'Longão',km:10,p:'8:15'}], total:21},
+ {w:4, phase:1,label:'18–24 mai', sessions:[{t:'easy',n:'Corrida fácil',km:4,p:'7:45'},{t:'easy',n:'Corrida fácil',km:4,p:'7:45'},{t:'long',n:'Longão',km:7,p:'8:15'}], total:15,rec:true},
+ {w:5, phase:1,label:'25–31 mai', sessions:[{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'tempo',n:'Tempo run',km:6,p:'6:15'},{t:'long',n:'Longão',km:11,p:'8:15'}], total:23},
  {w:6, phase:2,label:'1–7 jun', sessions:[{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'tempo',n:'Tempo run',km:7,p:'6:15'},{t:'long',n:'Longão',km:12,p:'8:15'}], total:25},
  {w:7, phase:2,label:'8–14 jun', sessions:[{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'tempo',n:'Tempo run',km:7,p:'6:15'},{t:'long',n:'Longão',km:13,p:'8:15'}], total:26},
  {w:8, phase:2,label:'15–21 jun', sessions:[{t:'easy',n:'Corrida fácil',km:5,p:'7:45'},{t:'easy',n:'Corrida fácil',km:5,p:'7:45'},{t:'long',n:'Longão',km:10,p:'8:15'}], total:20,rec:true},
- {w:9, phase:2,label:'22–28 jun', sessions:[{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'tempo',n:'Tempo run',km:7,p:'6:15'},{t:'long',n:'Longão',km:14,p:'8:15'}], total:27},
- {w:10, phase:2,label:'29 jun–5 jul', sessions:[{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'tempo',n:'Tempo run',km:7,p:'6:15'},{t:'long',n:'Longão',km:15,p:'8:15'}], total:28},
- {w:11, phase:2,label:'6–13 jul', sessions:[{t:'easy',n:'Corrida fácil',km:5,p:'7:45'},{t:'tempo',n:'Tempo run',km:6,p:'6:15'},{t:'long',n:'Longão',km:16,p:'8:15'}], total:27},
- {w:12, phase:3,label:'14–20 jul', sessions:[{t:'easy',n:'Corrida fácil',km:7,p:'7:45'},{t:'tempo',n:'Tempo run',km:8,p:'6:15'},{t:'long',n:'Longão',km:17,p:'8:15'}], total:32},
- {w:13, phase:3,label:'21–27 jul', sessions:[{t:'easy',n:'Corrida fácil',km:5,p:'7:45'},{t:'easy',n:'Corrida fácil',km:5,p:'7:45'},{t:'long',n:'Longão',km:12,p:'8:15'}], total:22,rec:true},
- {w:14, phase:3,label:'28 jul–3 ago', sessions:[{t:'easy',n:'Corrida fácil',km:7,p:'7:45'},{t:'tempo',n:'Tempo run',km:9,p:'6:15'},{t:'long',n:'Longão',km:18,p:'8:15'}], total:34},
- {w:15, phase:3,label:'4–10 ago', sessions:[{t:'easy',n:'Corrida fácil',km:7,p:'7:45'},{t:'tempo',n:'Tempo run',km:8,p:'6:15'},{t:'long',n:'Longão',km:19,p:'8:15'}], total:34},
- {w:16, phase:4,label:'11–17 ago', sessions:[{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'long',n:'Longão',km:13,p:'8:15'}], total:25,rec:true},
- {w:17, phase:4,label:'18–24 ago', sessions:[{t:'easy',n:'Corrida fácil',km:7,p:'7:45'},{t:'tempo',n:'Tempo run',km:9,p:'6:15'},{t:'long',n:'Longão',km:16,p:'8:15'}], total:32},
- {w:18, phase:4,label:'25–31 ago', sessions:[{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'tempo',n:'Tempo run',km:8,p:'6:15'},{t:'long',n:'Longão',km:18,p:'8:15'}], total:32},
- {w:19, phase:4,label:'1–7 set', sessions:[{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'long',n:'Longão',km:12,p:'8:15'}], total:24,rec:true},
- {w:20, phase:4,label:'8–14 set', sessions:[{t:'easy',n:'Corrida fácil',km:7,p:'7:45'},{t:'tempo',n:'Tempo run',km:9,p:'6:15'},{t:'long',n:'Longão',km:17,p:'8:15'}], total:33},
- {w:21, phase:4,label:'15–21 set', sessions:[{t:'easy',n:'Corrida fácil',km:7,p:'7:45'},{t:'tempo',n:'Tempo run',km:9,p:'6:15'},{t:'long',n:'Longão',km:18,p:'8:15'}], total:34},
- {w:22, phase:4,label:'22–28 set', sessions:[{t:'easy',n:'Corrida fácil',km:5,p:'7:45'},{t:'tempo',n:'Tempo run',km:6,p:'6:15'},{t:'long',n:'Longão',km:13,p:'8:15'}], total:24,rec:true},
- {w:23, phase:4,label:'29 set–5 out', sessions:[{t:'easy',n:'Corrida fácil',km:7,p:'7:45'},{t:'tempo',n:'Tempo run',km:7,p:'6:15'},{t:'long',n:'Longão',km:15,p:'8:15'}], total:29},
- {w:24, phase:4,label:'6–12 out', sessions:[{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'tempo',n:'Tempo run',km:7,p:'6:15'},{t:'long',n:'Longão',km:14,p:'8:15'}], total:27},
- {w:25, phase:5,label:'13–19 out', sessions:[{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'tempo',n:'Tempo run',km:5,p:'6:15'},{t:'long',n:'Longão',km:12,p:'8:15'}], total:23},
- {w:26, phase:5,label:'20–26 out', sessions:[{t:'easy',n:'Corrida fácil',km:5,p:'7:45'},{t:'tempo',n:'Tempo run',km:4,p:'6:15'},{t:'long',n:'Longão',km:10,p:'8:15'}], total:19},
- {w:27, phase:5,label:'27 out–2 nov', sessions:[{t:'easy',n:'Corrida fácil',km:4,p:'7:45'},{t:'tempo',n:'Tempo run',km:4,p:'6:15'},{t:'long',n:'Longão',km:8,p:'8:15'}], total:16},
- {w:28, phase:5,label:'3–9 nov', sessions:[{t:'easy',n:'Corrida fácil',km:4,p:'7:45'},{t:'easy',n:'Corrida fácil',km:3,p:'7:45'},{t:'long',n:'Longão',km:6,p:'8:15'}], total:13},
- {w:29, phase:5,label:'10–15 nov', sessions:[{t:'easy',n:'Corrida fácil',km:3,p:'7:45'},{t:'easy',n:'Corrida fácil',km:2,p:'7:45'},{t:'long',n:'PROVA 21,1 km',km:21.1,p:'6:55'}], total:26},
+ {w:9, phase:2,label:'22–28 jun', sessions:[{t:'easy',n:'Corrida fácil',km:7,p:'7:45'},{t:'tempo',n:'Tempo run',km:8,p:'6:15'},{t:'long',n:'Longão',km:14,p:'8:15'}], total:29},
+ {w:10, phase:2,label:'29 jun–5 jul', sessions:[{t:'easy',n:'Corrida fácil',km:7,p:'7:45'},{t:'tempo',n:'Tempo run',km:8,p:'6:15'},{t:'long',n:'Longão',km:15,p:'8:15'}], total:30},
+ {w:11, phase:2,label:'6–12 jul', sessions:[{t:'easy',n:'Corrida fácil',km:5,p:'7:45'},{t:'tempo',n:'Tempo run',km:6,p:'6:15'},{t:'long',n:'Longão',km:16,p:'8:15'}], total:27},
+ {w:12, phase:3,label:'13–19 jul', sessions:[{t:'easy',n:'Corrida fácil',km:7,p:'7:45'},{t:'tempo',n:'Tempo run',km:8,p:'6:15'},{t:'long',n:'Longão',km:17,p:'8:15'}], total:32},
+ {w:13, phase:3,label:'20–26 jul', sessions:[{t:'easy',n:'Corrida fácil',km:5,p:'7:45'},{t:'easy',n:'Corrida fácil',km:5,p:'7:45'},{t:'long',n:'Longão',km:12,p:'8:15'}], total:22,rec:true},
+ {w:14, phase:3,label:'27 jul–2 ago', sessions:[{t:'easy',n:'Corrida fácil',km:7,p:'7:45'},{t:'tempo',n:'Tempo run',km:9,p:'6:15'},{t:'long',n:'Longão',km:18,p:'8:15'}], total:34},
+ {w:15, phase:3,label:'3–9 ago', sessions:[{t:'easy',n:'Corrida fácil',km:7,p:'7:45'},{t:'tempo',n:'Tempo run',km:8,p:'6:15'},{t:'long',n:'Longão',km:19,p:'8:15'}], total:34},
+ {w:16, phase:4,label:'10–16 ago', sessions:[{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'long',n:'Longão',km:13,p:'8:15'}], total:25,rec:true},
+ {w:17, phase:4,label:'17–23 ago', sessions:[{t:'easy',n:'Corrida fácil',km:7,p:'7:45'},{t:'tempo',n:'Tempo run',km:9,p:'6:15'},{t:'long',n:'Longão',km:16,p:'8:15'}], total:32},
+ {w:18, phase:4,label:'24–30 ago', sessions:[{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'tempo',n:'Tempo run',km:8,p:'6:15'},{t:'long',n:'Longão',km:18,p:'8:15'}], total:32},
+ {w:19, phase:4,label:'31 ago–6 set', sessions:[{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'long',n:'Longão',km:12,p:'8:15'}], total:24,rec:true},
+ {w:20, phase:4,label:'7–13 set', sessions:[{t:'easy',n:'Corrida fácil',km:7,p:'7:45'},{t:'tempo',n:'Tempo run',km:9,p:'6:15'},{t:'long',n:'Longão',km:17,p:'8:15'}], total:33},
+ {w:21, phase:4,label:'14–20 set', sessions:[{t:'easy',n:'Corrida fácil',km:7,p:'7:45'},{t:'tempo',n:'Tempo run',km:9,p:'6:15'},{t:'long',n:'Longão',km:18,p:'8:15'}], total:34},
+ {w:22, phase:4,label:'21–27 set', sessions:[{t:'easy',n:'Corrida fácil',km:5,p:'7:45'},{t:'tempo',n:'Tempo run',km:6,p:'6:15'},{t:'long',n:'Longão',km:13,p:'8:15'}], total:24,rec:true},
+ {w:23, phase:4,label:'28 set–4 out', sessions:[{t:'easy',n:'Corrida fácil',km:7,p:'7:45'},{t:'tempo',n:'Tempo run',km:7,p:'6:15'},{t:'long',n:'Longão',km:15,p:'8:15'}], total:29},
+ {w:24, phase:4,label:'5–11 out', sessions:[{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'tempo',n:'Tempo run',km:7,p:'6:15'},{t:'long',n:'Longão',km:14,p:'8:15'}], total:27},
+ {w:25, phase:5,label:'12–18 out', sessions:[{t:'easy',n:'Corrida fácil',km:6,p:'7:45'},{t:'tempo',n:'Tempo run',km:5,p:'6:15'},{t:'long',n:'Longão',km:12,p:'8:15'}], total:23},
+ {w:26, phase:5,label:'19–25 out', sessions:[{t:'easy',n:'Corrida fácil',km:5,p:'7:45'},{t:'tempo',n:'Tempo run',km:4,p:'6:15'},{t:'long',n:'Longão',km:10,p:'8:15'}], total:19},
+ {w:27, phase:5,label:'26 out–1 nov', sessions:[{t:'easy',n:'Corrida fácil',km:4,p:'7:45'},{t:'tempo',n:'Tempo run',km:4,p:'6:15'},{t:'long',n:'Longão',km:8,p:'8:15'}], total:16},
+ {w:28, phase:5,label:'2–8 nov', sessions:[{t:'easy',n:'Corrida fácil',km:4,p:'7:45'},{t:'easy',n:'Corrida fácil',km:3,p:'7:45'},{t:'long',n:'Longão',km:6,p:'8:15'}], total:13},
+ {w:29, phase:5,label:'9–15 nov', sessions:[{t:'easy',n:'Corrida fácil',km:3,p:'7:45'},{t:'easy',n:'Corrida fácil',km:2,p:'7:45'},{t:'long',n:'PROVA 21,1 km',km:21.1,p:'6:55'}], total:26},
 ];
 
 const PHASE_LABELS = {1:'Base aeróbica',2:'Construção',3:'Pico de volume',4:'Afinamento de ritmo',5:'Taper'};
@@ -408,6 +409,7 @@ const FEEL_OPTS = ['otimo','bom','regular','dificil','nao'];
 let state = {};
 let curWeek = 8; // será atualizado no init
 let editing = null;
+let nextWorkoutLoc = null;
 
 function sk(w,i){ return `w${w}_s${i}`; }
 function p2s(p){ if(!p)return null; const[m,s]=p.split(':').map(Number); return m*60+(s||0); }
@@ -463,11 +465,19 @@ function renderWeekRow(){
  const row=document.getElementById('week-row');
  row.innerHTML='';
  PLAN.forEach(w=>{
- const done=w.sessions.filter((_,i)=>state[sk(w.w,i)]?.done).length;
- const all=done===w.sessions.length;
+ // Truly done: registered AND not "não fiz"
+ const trulyDone=w.sessions.filter((_,i)=>{const lg=state[sk(w.w,i)];return lg?.done&&lg.feel!=='nao';}).length;
+ // All registered: any record (including "não fiz")
+ const allRegistered=w.sessions.filter((_,i)=>state[sk(w.w,i)]?.done).length===w.sessions.length;
+ const fullyComplete=trulyDone===w.sessions.length;
  const pill=document.createElement('div');
- pill.className='week-pill'+(w.w===curWeek?' active':all?' done':w.rec?' recovery':'');
- pill.textContent=`S${w.w} ${done}/${w.sessions.length}`;
+ let cls='week-pill';
+ if(w.w===curWeek) cls+=' active';
+ else if(fullyComplete) cls+=' done';
+ else if(allRegistered) cls+=' partial';
+ else if(w.rec) cls+=' recovery';
+ pill.className=cls;
+ pill.textContent=`S${w.w} ${trulyDone}/${w.sessions.length}`;
  pill.onclick=()=>{curWeek=w.w;editing=null;renderToday();};
  row.appendChild(pill);
  });
@@ -510,6 +520,7 @@ function renderSessions(){
  const badgeCls={easy:'t-easy',tempo:'t-tempo',long:'t-long'}[s.t]||'t-easy';
  const typeLabel={easy:'Fácil',tempo:'Tempo run',long:'Longão'}[s.t]||s.t;
  const isNaoFiz=lg.done&&lg.feel==='nao';
+ const isRace=s.n&&s.n.indexOf('PROVA')>=0;
 
  if(lg.done&&!isEdit){
  const diff=lg.pace?(p2s(lg.pace)-p2s(s.p)):null;
@@ -568,13 +579,13 @@ function renderSessions(){
  <div class="field"><label>BPM médio</label><input type="number" id="bpm-${key}" placeholder="ex: 171" value="${lg.bpm||''}" min="60" max="220" inputmode="numeric"></div>
  </div>
 
- <div class="field" style="margin-bottom:10px;">
+ ${!isRace?`<div class="field" style="margin-bottom:10px;">
  <label>Tipo de piso</label>
  <div style="display:flex;gap:8px;margin-top:4px;">
  <button class="feel-opt${lg.local==='rua'?' sel':''}" style="flex:1;" onclick="setLocal('${key}','rua',this)">Rua</button>
  <button class="feel-opt${lg.local==='esteira'?' sel':''}" style="flex:1;" onclick="setLocal('${key}','esteira',this)">Esteira</button>
  </div>
- </div>
+ </div>`:''}
  <div class="field" style="margin-bottom:10px;"><label>Como foi</label>
  <div class="feel-grid" style="margin-top:4px;">
  ${FEEL_OPTS.map(f=>`<button class="feel-opt${feel===f?' sel':''}" onclick="setFeel('${key}','${f}',this)">${FEEL_LABELS[f]}</button>`).join('')}
@@ -582,7 +593,7 @@ function renderSessions(){
  </div>
  <textarea class="notes" id="notes-${key}" placeholder="Algo de diferente? Intestino, cansaço, clima…">${lg.notes||''}</textarea>
  <p style="font-size:11px;color:var(--text3);margin-top:8px;">* km e pace obrigatórios para salvar</p>
- <button class="save-btn" id="save-${key}" onclick="saveSession('${key}',${w.w},${i})" disabled>Salvar treino</button>
+ <button class="save-btn" id="save-${key}" onclick="saveSession('${key}',${w.w},${i})" disabled>${isRace?'Registrar prova':'Salvar treino'}</button>
  `;
  }
  cont.appendChild(div);
@@ -656,6 +667,7 @@ function renderWeekSummary(){
  document.getElementById('ws-km').textContent=Math.round(realKmDone)+' km';
  // Próximo treino: primeira sessão não feita do plano a partir da semana atual
  let nextType='–', nextKm='–';
+ nextWorkoutLoc=null;
  outer: for(let wi=realW-1;wi<PLAN.length;wi++){
  const pw=PLAN[wi];
  for(let si=0;si<pw.sessions.length;si++){
@@ -663,6 +675,7 @@ function renderWeekSummary(){
  const typeLabel={easy:'Fácil',tempo:'Tempo run',long:'Longão'}[pw.sessions[si].t]||pw.sessions[si].t;
  nextType=typeLabel;
  nextKm=pw.sessions[si].km+' km · '+pw.sessions[si].p+' /km';
+ nextWorkoutLoc={week:pw.w,idx:si};
  break outer;
  }
  }
@@ -788,9 +801,24 @@ function goToToday(){
  renderToday();
 }
 
+function goToNextWorkout(){
+ if(!nextWorkoutLoc) return;
+ const key=sk(nextWorkoutLoc.week,nextWorkoutLoc.idx);
+ curWeek=nextWorkoutLoc.week;
+ editing=key;
+ renderToday();
+ setTimeout(()=>{
+ const el=document.getElementById('km-'+key);
+ if(el) el.closest('.session').scrollIntoView({behavior:'smooth',block:'center'});
+ },100);
+}
+
 function currentPlanWeek(){
- const start=new Date('2026-04-26');
+ // Week 1 starts Monday 27 Apr 2026; weeks turn over on Monday
+ const start=new Date(2026,3,27); // Mon Apr 27 2026, local time
+ start.setHours(0,0,0,0);
  const today=new Date();
+ today.setHours(0,0,0,0);
  const diff=Math.floor((today-start)/(7*86400000));
  return Math.max(1,Math.min(29,diff+1));
 }
