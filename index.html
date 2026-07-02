@@ -539,6 +539,7 @@ function renderSessions(){
  <div class="log-summary">
  ${!isNaoFiz?`<span class="log-chip"> ${lg.kmReal||s.km} km</span>`:''}
  ${!isNaoFiz&&lg.pace?`<span class="log-chip"> ${lg.pace} /km ${diffHtml}</span>`:''}
+ ${!isNaoFiz&&lg.paceBloco?`<span class="log-chip"> bloco ${lg.paceBloco}</span>`:''}
  ${!isNaoFiz&&lg.duration?`<span class="log-chip"> ${durDisplay(lg.duration)}</span>`:''}
  ${!isNaoFiz&&lg.bpm?`<span class="log-chip"> BPM ${lg.bpm}</span>`:''}
  ${!isNaoFiz&&lg.local==='esteira'?'<span class="log-chip"> Esteira</span>':!isNaoFiz&&lg.local==='rua'?'<span class="log-chip"> Rua</span>':''}
@@ -578,6 +579,16 @@ function renderSessions(){
  </div>
  <div class="field"><label>BPM médio</label><input type="number" id="bpm-${key}" placeholder="ex: 171" value="${lg.bpm||''}" min="60" max="220" inputmode="numeric"></div>
  </div>
+
+ ${s.t==='tempo'?`<div class="field" style="margin-bottom:10px;">
+ <label>Pace do bloco de esforço (min:seg)</label>
+ <div style="display:flex;align-items:center;gap:4px;max-width:50%;">
+ <input type="number" id="bloco-min-${key}" placeholder="6" value="${lg.paceBloco ? lg.paceBloco.split(':')[0] : ''}" min="3" max="15" inputmode="numeric" style="width:100%;">
+ <span style="color:var(--text2);font-weight:700;">:</span>
+ <input type="number" id="bloco-sec-${key}" placeholder="15" value="${lg.paceBloco ? lg.paceBloco.split(':')[1] : ''}" min="0" max="59" inputmode="numeric" style="width:100%;">
+ </div>
+ <p style="font-size:11px;color:var(--text3);margin-top:4px;">Só o miolo do treino, sem aquecimento/desaquecimento. Usado nos gráficos e na estimativa.</p>
+ </div>`:''}
 
  ${!isRace?`<div class="field" style="margin-bottom:10px;">
  <label>Tipo de piso</label>
@@ -689,8 +700,10 @@ function calcEstimate(){
  PLAN.forEach(w=>w.sessions.forEach((s,i)=>{
  if(s.t!=='tempo') return;
  const lg=state[sk(w.w,i)];
- if(lg?.done&&lg.pace){
- const realSec=p2s(lg.pace);
+ if(lg?.done&&lg.feel!=='nao'){
+ // Prefer paceBloco (effort block) over session average pace
+ const effortPace=lg.paceBloco||lg.pace;
+ const realSec=p2s(effortPace);
  const targetSec=p2s(s.p);
  if(realSec&&targetSec) tempoSessions.push({w:w.w,ratio:realSec/targetSec,real:realSec});
  }
@@ -780,6 +793,9 @@ function saveSession(key,w,i){
  const cur=state[key]||{};
  const feelToSave=cur.feelTemp||cur.feel||'';
   const isNaoSave=feelToSave==='nao';
+  const blocoMin=document.getElementById('bloco-min-'+key)?.value;
+  const blocoSec=document.getElementById('bloco-sec-'+key)?.value;
+  const paceBloco=(blocoMin&&blocoSec)?blocoMin+':'+String(blocoSec).padStart(2,'0'):(blocoMin?blocoMin+':00':'');
   state[key]={
     done:true,
     kmReal:isNaoSave?'':(parseFloat(km)||s.km),
@@ -787,6 +803,7 @@ function saveSession(key,w,i){
     duration:isNaoSave?'':(dur||''),
     bpm:isNaoSave?'':(parseInt(bpm)||''),
     local:isNaoSave?'':(cur.localTemp||cur.local||''),
+    paceBloco:isNaoSave?'':(paceBloco||''),
     feel:feelToSave,
     notes:notes||''
   };
@@ -869,7 +886,11 @@ function renderCharts(){
  const paceSessions=[];
  PLAN.forEach(w=>w.sessions.forEach((s,i)=>{
  const lg=state[sk(w.w,i)];
- if(lg?.done&&lg.pace) paceSessions.push({l:`S${w.w}`,real:p2s(lg.pace),target:p2s(s.p)});
+ if(lg?.done&&lg.feel!=='nao'){
+ // For tempo runs, use paceBloco (effort block) if available
+ const effortPace=(s.t==='tempo'&&lg.paceBloco)?lg.paceBloco:lg.pace;
+ if(effortPace) paceSessions.push({l:`S${w.w}`,real:p2s(effortPace),target:p2s(s.p)});
+ }
  }));
 
  if(chartPace) chartPace.destroy();
@@ -988,6 +1009,7 @@ function renderHistory(){
  <div class="hist-detail" style="margin-top:5px;">
  ${lg.kmReal?lg.kmReal+' km':''}
  ${lg.pace?` · ${lg.pace} /km ${diffHtml}`:''}
+ ${lg.paceBloco?` · bloco ${lg.paceBloco}`:''}
  ${lg.duration?` · ${durDisplay(lg.duration)}`:''}
  ${lg.bpm?` · BPM: ${lg.bpm} bpm`:''}
  ${lg.local==='esteira'?' · Esteira':lg.local==='rua'?' · Rua':''}
